@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="fund_source_status_facility" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/fund_source_status_facility_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/fund_source_status_facility"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="177"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="812"/>
+	<subDataset name="fundsource" whenResourceMissingType="Empty" uuid="b8348966-eded-4062-a3e6-e8b0aa1dbc9d">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<parameter name="financial_year_id" class="java.lang.Long"/>
+		<parameter name="facility_id" class="java.lang.Long"/>
+		<queryString language="SQL">
+			<![CDATA[WITH Q AS (
+    select 
+        facility_id, 
+        funding_source_id, 
+        sum(amount) as carryover, 
+        0.00 as receipt, 
+        0.00 as expenditure 
+    from fund_trackings fr 
+    where fr.facility_id=42744 and fr.financial_year_id in (
+        Select id from financial_years where end_date < (select start_date from financial_years where id=1)) 
+    group by fr.funding_source_id, fr.facility_id 
+    union all
+    select 
+        facility_id, 
+        funding_source_id,
+        0.00 as carryover,
+        SUM(case when fr.transaction_type = 'App\Models\Receipt' then fr.amount else 0 end) as receipt,
+        SUM(case when fr.transaction_type = 'App\Models\Payable' then fr.amount else 0 end) as expenditure
+    from fund_trackings fr 
+    where fr.facility_id=42744 and fr.financial_year_id = 1
+    group by fr.funding_source_id, fr.facility_id
+) 
+SELECT 
+ fu.code as fund_code,
+ fu.description as fund_source,
+ SUM(carryover) as carryover,
+ SUM(receipt) as receipt,
+ SUM(expenditure * -1) as expenditure
+FROM Q
+join funding_sources as fu on fu.id = Q.funding_source_id
+GROUP BY facility_id, fu.id]]>
+		</queryString>
+		<field name="fund_code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_code"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="fund_source" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="carryover" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="carryover"/>
+			<property name="com.jaspersoft.studio.field.label" value="carryover"/>
+		</field>
+		<field name="receipt" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="receipt"/>
+			<property name="com.jaspersoft.studio.field.label" value="receipt"/>
+		</field>
+		<field name="expenditure" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="expenditure"/>
+			<property name="com.jaspersoft.studio.field.label" value="expenditure"/>
+		</field>
+	</subDataset>
+	<parameter name="facility_id" class="java.lang.Long"/>
+	<parameter name="financial_year_id" class="java.lang.Long"/>
+	<queryString language="SQL">
+		<![CDATA[WITH Q AS (
+    select 
+        facility_id, 
+        funding_source_id, 
+        sum(amount) as carryover, 
+        0.00 as receipt, 
+        0.00 as expenditure 
+    from fund_trackings fr 
+    where fr.facility_id=42744 and fr.financial_year_id in (
+        Select id from financial_years where end_date < (select start_date from financial_years where id=1)) 
+    group by fr.funding_source_id, fr.facility_id 
+    union all
+    select 
+        facility_id, 
+        funding_source_id,
+        0.00 as carryover,
+        SUM(case when fr.transaction_type = 'App\Models\Receipt' then fr.amount else 0 end) as receipt,
+        SUM(case when fr.transaction_type = 'App\Models\Payable' then fr.amount else 0 end) as expenditure
+    from fund_trackings fr 
+    where fr.facility_id=42744 and fr.financial_year_id = 1
+    group by fr.funding_source_id, fr.facility_id
+) 
+SELECT 
+ fu.code as fund_code,
+ fu.description as fund_source,
+ SUM(carryover) as carryover,
+ SUM(receipt) as receipt,
+ SUM(expenditure * -1) as expenditure
+FROM Q
+join funding_sources as fu on fu.id = Q.funding_source_id
+GROUP BY facility_id, fu.id]]>
+	</queryString>
+	<field name="fund_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fund_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="fund_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+	</field>
+	<field name="fund_source" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fund_source"/>
+		<property name="com.jaspersoft.studio.field.label" value="fund_source"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+	</field>
+	<field name="carryover" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="carryover"/>
+		<property name="com.jaspersoft.studio.field.label" value="carryover"/>
+	</field>
+	<field name="receipt" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="receipt"/>
+		<property name="com.jaspersoft.studio.field.label" value="receipt"/>
+	</field>
+	<field name="expenditure" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="expenditure"/>
+		<property name="com.jaspersoft.studio.field.label" value="expenditure"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="131" splitType="Stretch">
+			<staticText>
+				<reportElement x="316" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="265" y="110" width="283" height="19" uuid="97731c52-63e1-4bcf-9416-a18acce767b1"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fund Source Status]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="67" splitType="Stretch"/>
+	</detail>
+</jasperReport>

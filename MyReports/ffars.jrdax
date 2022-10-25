@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<jdbcDataAdapter class="net.sf.jasperreports.data.jdbc.JdbcDataAdapterImpl">
+  <name>ffars</name>
+  <driver>org.postgresql.Driver</driver>
+  <username>postgres</username>
+  <password>p@ssw0rd</password>
+  <url>jdbc:postgresql://localhost:5432/ffars</url>
+  <database></database>
+  <savePassword>true</savePassword>
+  <serverAddress></serverAddress>
+</jdbcDataAdapter>
