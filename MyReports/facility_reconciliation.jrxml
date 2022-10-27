@@ -78,9 +78,7 @@ select
     where
         r.facility_id=$P{facility_id}
         and month =   (DATE_TRUNC('MONTH', ($P{end_date})::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
-        and r.bank_account_id =$P{bank_account_id}) as reco
-        
-        ]]>
+        and r.bank_account_id =$P{bank_account_id}) as reco]]>
 		</queryString>
 		<field name="bank_account" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="bank_account"/>
@@ -184,7 +182,7 @@ where vw.id=$P{facility_id};]]>
 		</band>
 	</title>
 	<detail>
-		<band height="98">
+		<band height="108">
 			<componentElement>
 				<reportElement x="2" y="4" width="550" height="90" uuid="14fa435d-55ee-4f9a-8dd7-21d42a1b06eb">
 					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
@@ -221,6 +219,12 @@ where vw.id=$P{facility_id};]]>
 							</textField>
 						</jr:tableHeader>
 						<jr:columnHeader style="Table_CH" height="30">
+							<box>
+								<topPen lineWidth="0.25"/>
+								<leftPen lineWidth="0.25"/>
+								<bottomPen lineWidth="0.25"/>
+								<rightPen lineWidth="0.25"/>
+							</box>
 							<staticText>
 								<reportElement x="0" y="0" width="420" height="30" uuid="61c26070-4b21-4442-9e0c-7d7b9193b35b"/>
 								<box padding="4"/>
@@ -231,6 +235,12 @@ where vw.id=$P{facility_id};]]>
 							</staticText>
 						</jr:columnHeader>
 						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.25"/>
+								<leftPen lineWidth="0.25"/>
+								<bottomPen lineWidth="0.25"/>
+								<rightPen lineWidth="0.25"/>
+							</box>
 							<textField>
 								<reportElement x="0" y="0" width="420" height="30" uuid="7c7b3fef-f3df-4d26-ae38-da09541d8f62"/>
 								<box padding="4"/>
@@ -245,6 +255,12 @@ where vw.id=$P{facility_id};]]>
 						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
 						<jr:tableHeader style="Table_TH" height="30" rowSpan="1"/>
 						<jr:columnHeader style="Table_CH" height="30">
+							<box>
+								<topPen lineWidth="0.25"/>
+								<leftPen lineWidth="0.25"/>
+								<bottomPen lineWidth="0.25"/>
+								<rightPen lineWidth="0.25"/>
+							</box>
 							<staticText>
 								<reportElement x="0" y="0" width="130" height="30" uuid="421f8238-25fc-4110-8430-551f631d039a"/>
 								<box padding="4"/>
@@ -255,6 +271,12 @@ where vw.id=$P{facility_id};]]>
 							</staticText>
 						</jr:columnHeader>
 						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.25"/>
+								<leftPen lineWidth="0.25"/>
+								<bottomPen lineWidth="0.25"/>
+								<rightPen lineWidth="0.25"/>
+							</box>
 							<textField pattern="#,##0.00;(#,##0.00)">
 								<reportElement x="0" y="0" width="130" height="30" uuid="4c68380f-abdf-44e5-96f2-36e328fe0164"/>
 								<box padding="4"/>
@@ -269,4 +291,53 @@ where vw.id=$P{facility_id};]]>
 			</componentElement>
 		</band>
 	</detail>
+	<summary>
+		<band height="156">
+			<staticText>
+				<reportElement x="3" y="18" width="359" height="20" uuid="a2132a56-b28b-4f13-8903-3883a9f88a38"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Prepared By .............................................. Date .............................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="69" width="359" height="20" uuid="b5295d35-bb92-44a6-ab8b-dc9b1244f2b9"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Approved By .............................................. Date .............................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="18" width="172" height="20" uuid="4f3e9ad1-ef42-4544-b8ac-4b86042447b9"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature ..................................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="69" width="173" height="20" uuid="5c1e1dec-b105-4fa7-ac3b-6c5bde4756cd"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature ..................................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2" y="128" width="173" height="20" uuid="eba63c51-ee6f-4bc2-974b-f1be380d0968"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed On]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="d/M/yy h:mm a">
+				<reportElement x="297" y="128" width="254" height="19" uuid="37e827db-0dd3-419c-9180-d74527ac33be">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
 </jasperReport>
