@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ward_village" pageWidth="1191" pageHeight="842" orientation="Landscape" columnWidth="1151" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/ward_village_files/rxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/ward_village"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="mapato_matumizi" uuid="bf52e9b2-2168-4edb-bced-4151d705ca9e">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<queryString language="SQL">
+			<![CDATA[
+ Select
+    fs.id as fund_source_id,
+    fs.code as fund_code,
+    fs.description as chanzo,
+    sum(rp.amount) as mapatoPangwa,
+    sum(coalesce(receipt.cummReceipt,0)-coalesce(receipt.periodReceipt, 0)) as mapatoKabla,
+    coalesce(sum(receipt.periodReceipt),0) as mapatoKwaKipindi,
+    sum(coalesce(pendingPayment.cummUnpaid,0) - coalesce(pendingPayment.periodUnpaid,0)) as madaiKabla,
+    coalesce(sum(pendingPayment.periodUnpaid),0) as madaiKwaKipindi,
+    coalesce(sum(budget.amount),0) as matumiziPangwa,
+    coalesce(sum(expenditure.amount),0) as matumiziHalisi,
+    coalesce(sum(upPaid.amount),0) as matumiziDaiwa
+    from revenue_projections rp
+    join funding_sources fs on fs.code = rp.funding_source_code
+    left join (
+        Select * from(
+             Select
+                rit.funding_source_code,
+                sum(rit.amount) over(partition by funding_source_code order by rc.date,rc.id) as cummReceipt,
+                sum(rit.amount) filter ( where rc.date >='2022-07-30'::date ) over(partition by funding_source_code order by rc.date,rc.id) as periodReceipt,
+                row_number() over (partition by funding_source_code order by rc.date desc, rc.id desc ) as inv_number
+            from receipts rc
+            join receipt_items as rit on rc.id = rit.receipt_id and rc.deleted_at is null
+            where rc.facility_id = 24767 and rc.date <=current_date
+            order by rc.date, rc.id
+        ) as filtered where  filtered.inv_number = 1
+    ) as receipt on receipt.funding_source_code = fs.code
+    left join (
+        Select * from(
+            Select
+               funding_source_id,
+               sum( inv.amount - inv.received_amount) over(partition by funding_source_id order by inv.date,inv.id) as cummUnpaid,
+               sum( inv.amount - inv.received_amount) filter ( where inv.date >='2022-07-29'::date ) over(partition by funding_source_id order by inv.date,inv.id) as periodUnpaid,
+               row_number() over (partition by funding_source_id order by inv.date desc, inv.id desc ) as inv_number
+            from invoices inv
+            join invoice_items itm on inv.id = itm.invoice_id
+            join invoice_item_definitions iid on itm.invoice_item_definition_id = iid.id
+            where inv.facility_id = 24767  and itm.amount <> itm.received_amount and inv.date <= current_date
+            order by inv.date, inv.id
+        ) as filtered where inv_number =1
+    ) as pendingPayment on pendingPayment.funding_source_id = fs.id
+    left join (
+        select
+            funding_source_id,
+            sum(amount) as amount
+        from activity_costings ac
+        where ac.financial_year_id = 1 and facility_id = 24767
+        group by funding_source_id
+    ) as budget on budget.funding_source_id = fs.id
+    left join (
+        select
+            funding_source_id,
+            sum(-1 * amount) as amount
+        from fund_trackings fr
+        where  facility_id = 24767
+          and date >= '2022-07-29':: date and date <= current_date
+          and fr.transaction_type = 'App\Models\Payable'
+        group by fr.funding_source_id
+    ) expenditure on expenditure.funding_source_id = fs.id
+    left join (
+        select
+            funding_source_id,
+            sum(vc.amount - vc.amount_paid) as amount
+        from vouchers vc
+        join payables p on vc.id = p.voucher_id
+        where  p.facility_id = 24767
+          and vc.date >= '2022-07-29':: date and vc.date <= current_date
+          and vc.full_paid = false
+        group by p.funding_source_id
+    ) upPaid on upPaid.funding_source_id = fs.id
+where rp.facility_id =24767 and rp.financial_year_id = 1
+group by fs.id
+order by fs.code]]>
+		</queryString>
+		<field name="fund_source_id" class="java.lang.Integer">
+			<property name="com.jaspersoft.studio.field.name" value="fund_source_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_source_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="fund_code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_code"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="chanzo" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="chanzo"/>
+			<property name="com.jaspersoft.studio.field.label" value="chanzo"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="mapatopangwa" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="mapatopangwa"/>
+			<property name="com.jaspersoft.studio.field.label" value="mapatopangwa"/>
+		</field>
+		<field name="mapatokabla" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="mapatokabla"/>
+			<property name="com.jaspersoft.studio.field.label" value="mapatokabla"/>
+		</field>
+		<field name="mapatokwakipindi" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="mapatokwakipindi"/>
+			<property name="com.jaspersoft.studio.field.label" value="mapatokwakipindi"/>
+		</field>
+		<field name="madaikabla" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="madaikabla"/>
+			<property name="com.jaspersoft.studio.field.label" value="madaikabla"/>
+		</field>
+		<field name="madaikwakipindi" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="madaikwakipindi"/>
+			<property name="com.jaspersoft.studio.field.label" value="madaikwakipindi"/>
+		</field>
+		<field name="matumizipangwa" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="matumizipangwa"/>
+			<property name="com.jaspersoft.studio.field.label" value="matumizipangwa"/>
+		</field>
+		<field name="matumizihalisi" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="matumizihalisi"/>
+			<property name="com.jaspersoft.studio.field.label" value="matumizihalisi"/>
+		</field>
+		<field name="matumizidaiwa" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="matumizidaiwa"/>
+			<property name="com.jaspersoft.studio.field.label" value="matumizidaiwa"/>
+		</field>
+	</subDataset>
+	<parameter name="facility_id" class="java.lang.Long"/>
+	<parameter name="start_date" class="java.sql.Date"/>
+	<parameter name="end_date" class="java.sql.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select
+name as facility,
+ftype as type,
+cname as council
+from facility_ward_view where id=$P{facility_id};]]>
+	</queryString>
+	<field name="facility" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="type"/>
+		<property name="com.jaspersoft.studio.field.label" value="type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="council" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="council"/>
+		<property name="com.jaspersoft.studio.field.label" value="council"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="183" splitType="Stretch">
+			<image hAlign="Center">
+				<reportElement x="532" y="5" width="86" height="75" uuid="d0e910af-28b2-4a75-872e-fbab450fcc5e"/>
+				<imageExpression><![CDATA["repo:/ffars/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="490" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="451" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="434" y="140" width="283" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[General Ledger Report]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="448" y="122" width="254" height="19" uuid="1db595bc-dd6f-4b83-bc0e-1c182b083619">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facility}+ " " +$F{type}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="454" y="161" width="243" height="19" uuid="f35f7cc6-1add-4305-aa72-9407d2d2e338">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{start_date} + " - " + $P{end_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="448" y="103" width="254" height="19" uuid="7517af8e-8409-441b-aecc-9221d89e34bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{council}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="228">
+			<componentElement>
+				<reportElement x="2" y="5" width="1147" height="205" uuid="2720020c-aeac-40d2-a41a-e8f207732e1e">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="mapato_matumizi" uuid="f52ca12a-df0f-4eb2-8f19-75b4454ab63e">
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="40" uuid="30473c0e-8168-4a7c-af01-63dac2bdfa4d">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3">
+							<staticText>
+								<reportElement x="0" y="0" width="40" height="60" uuid="1460fd13-b5fe-4e7b-9536-489c670c3abe"/>
+								<text><![CDATA[fund_code]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1"/>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="40" height="30" uuid="55b2a3b0-df54-4479-88ea-64aa0244ffd7"/>
+								<textFieldExpression><![CDATA[$F{fund_code}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="150" uuid="a4ea7ff3-2e65-42b8-bdee-9f4da811adda">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<staticText>
+								<reportElement x="0" y="0" width="150" height="60" uuid="5a86d729-5ec8-4599-a94d-638060ad6717"/>
+								<text><![CDATA[chanzo]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1"/>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="150" height="30" uuid="0ec02e5d-a647-4e4f-8fc7-70829597881e"/>
+								<textFieldExpression><![CDATA[$F{chanzo}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:columnGroup width="490" uuid="314bab55-99c4-4067-97f2-d54167795cc3">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Columns [7]"/>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1"/>
+						<jr:column width="75" uuid="c6ffa359-93f1-4438-b31d-bf3fc15ba7e5">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column3"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+							<jr:columnHeader style="Table_CH" height="60" rowSpan="2">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								<staticText>
+									<reportElement x="0" y="0" width="75" height="60" uuid="1a4e1eec-062c-4b5e-a18e-1cf59fb26975"/>
+									<text><![CDATA[mapatopangwa]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							</jr:columnFooter>
+							<jr:detailCell style="Table_TD" height="30">
+								<textField>
+									<reportElement x="0" y="0" width="75" height="30" uuid="57e1f9c6-f218-49f1-9570-78d9ee5dd7d2"/>
+									<textFieldExpression><![CDATA[$F{mapatopangwa}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+						<jr:columnGroup width="150" uuid="00c32ee0-0ddb-414b-a4e4-f78b22134064">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Columns [2]"/>
+							<jr:columnHeader style="Table_CH" height="30" rowSpan="1"/>
+							<jr:column width="75" uuid="cc3814a5-52d7-4e02-b94c-19581762c316">
+								<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column4"/>
+								<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+								<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+									<staticText>
+										<reportElement x="0" y="0" width="75" height="30" uuid="b580cd39-5e68-40f4-888e-5b78d60552a8"/>
+										<text><![CDATA[mapatokabla]]></text>
+									</staticText>
+								</jr:columnHeader>
+								<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+									<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								</jr:columnFooter>
+								<jr:detailCell style="Table_TD" height="30">
+									<textField>
+										<reportElement x="0" y="0" width="75" height="30" uuid="f9b95bc6-54ae-4c2e-acd3-c139e63d0926"/>
+										<textFieldExpression><![CDATA[$F{mapatokabla}]]></textFieldExpression>
+									</textField>
+								</jr:detailCell>
+							</jr:column>
+							<jr:column width="75" uuid="029400cf-b2e0-40d4-9412-b36fc6c68a1c">
+								<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column5"/>
+								<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+								<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+									<staticText>
+										<reportElement x="0" y="0" width="75" height="30" uuid="5a2686c9-99e7-41d0-aba9-ac2db6638e17"/>
+										<text><![CDATA[madaikabla]]></text>
+									</staticText>
+								</jr:columnHeader>
+								<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+									<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								</jr:columnFooter>
+								<jr:detailCell style="Table_TD" height="30">
+									<textField>
+										<reportElement x="0" y="0" width="75" height="30" uuid="392f2824-c42f-457c-8144-0fa1d5bf7ba0"/>
+										<textFieldExpression><![CDATA[$F{madaikabla}]]></textFieldExpression>
+									</textField>
+								</jr:detailCell>
+							</jr:column>
+						</jr:columnGroup>
+						<jr:columnGroup width="150" uuid="dfd4cb63-fbb1-4ca2-8fb6-3072d9656146">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Columns [2]"/>
+							<jr:columnHeader style="Table_CH" height="30" rowSpan="1"/>
+							<jr:column width="75" uuid="b90612a1-806e-42d5-96d2-706b55e159a9">
+								<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column6"/>
+								<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+								<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+									<staticText>
+										<reportElement x="0" y="0" width="75" height="30" uuid="4594a12f-ed86-4538-a1f2-489ab4e804f2"/>
+										<text><![CDATA[mapatokwakipindi]]></text>
+									</staticText>
+								</jr:columnHeader>
+								<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+									<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								</jr:columnFooter>
+								<jr:detailCell style="Table_TD" height="30">
+									<textField>
+										<reportElement x="0" y="0" width="75" height="30" uuid="44aced20-69c7-4361-9292-4485142d7f74"/>
+										<textFieldExpression><![CDATA[$F{mapatokwakipindi}]]></textFieldExpression>
+									</textField>
+								</jr:detailCell>
+							</jr:column>
+							<jr:column width="75" uuid="48bfd219-ffe5-4635-b1d1-d5656b788811">
+								<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column7"/>
+								<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+								<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+									<staticText>
+										<reportElement x="0" y="0" width="75" height="30" uuid="e71d5363-c6b9-4632-99a3-69459a7ec382"/>
+										<text><![CDATA[madaikwakipindi]]></text>
+									</staticText>
+								</jr:columnHeader>
+								<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+									<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								</jr:columnFooter>
+								<jr:detailCell style="Table_TD" height="30">
+									<textField>
+										<reportElement x="0" y="0" width="75" height="30" uuid="b6caaa12-c59d-4574-bdae-47eaa6b6ae22"/>
+										<textFieldExpression><![CDATA[$F{madaikwakipindi}]]></textFieldExpression>
+									</textField>
+								</jr:detailCell>
+							</jr:column>
+						</jr:columnGroup>
+						<jr:column width="75" uuid="2233e09b-754f-4681-8657-dae0e1fa35b1">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column8"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+							<jr:columnHeader style="Table_CH" height="60" rowSpan="2"/>
+							<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							</jr:columnFooter>
+							<jr:detailCell style="Table_TD" height="30"/>
+						</jr:column>
+						<jr:column width="40" uuid="3df5e8ef-d76c-48e5-8af7-353b40452d23">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column9"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+							<jr:columnHeader style="Table_CH" height="60" rowSpan="2">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							</jr:columnHeader>
+							<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							</jr:columnFooter>
+							<jr:detailCell style="Table_TD" height="30"/>
+						</jr:column>
+					</jr:columnGroup>
+					<jr:column width="75" uuid="d0013687-da64-4192-a0d2-408fd09d960f">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column10"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3">
+							<staticText>
+								<reportElement x="0" y="0" width="75" height="60" uuid="3e3e5e1c-65f9-42f0-a664-024d5b8eb509"/>
+								<text><![CDATA[matumizipangwa]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:columnFooter>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="75" height="30" uuid="4f92adc4-da49-49bd-a533-0f3061373375"/>
+								<textFieldExpression><![CDATA[$F{matumizipangwa}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="75" uuid="aa4b31bc-9229-4190-a41d-75004d05e042">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column11"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3">
+							<staticText>
+								<reportElement x="0" y="0" width="75" height="60" uuid="fcc4d6d9-e3e4-447a-a727-48bb881d2886"/>
+								<text><![CDATA[matumizihalisi]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:columnFooter>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="75" height="30" uuid="29a8c7be-cdd3-47ce-be6b-69f3c8d702c5"/>
+								<textFieldExpression><![CDATA[$F{matumizihalisi}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="75" uuid="d9450db2-8a9a-4395-a81f-c58a2d957017">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column12"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3">
+							<staticText>
+								<reportElement x="0" y="0" width="75" height="60" uuid="e36dabae-b0e2-44b2-bec0-ce36b67183c5"/>
+								<text><![CDATA[matumizidaiwa]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:columnFooter>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="75" height="30" uuid="1209fec5-1b2e-44ea-b578-a02481c24ac1"/>
+								<textFieldExpression><![CDATA[$F{matumizidaiwa}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="75" uuid="68524001-a229-415f-9b72-4b36729f096a">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column13"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3"/>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:columnFooter>
+						<jr:detailCell style="Table_TD" height="30"/>
+					</jr:column>
+					<jr:column width="40" uuid="e7917ae6-a148-40d2-b589-986eed05b5f7">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column14"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="90" rowSpan="3">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:columnHeader>
+						<jr:columnFooter style="Table_CH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+						</jr:columnFooter>
+						<jr:detailCell style="Table_TD" height="30"/>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+</jasperReport>

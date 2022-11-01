@@ -27,7 +27,22 @@
 			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_cashbook.jrxml</location>
 		</link>
 		<link>
+			<name>facility_cashbook_1.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_cashbook.jrxml</location>
+		</link>
+		<link>
 			<name>facility_cashbook_by_fund_source.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_cashbook_by_fund_source.jrxml</location>
+		</link>
+		<link>
+			<name>facility_cashbook_by_fund_source_1.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_cashbook_by_fund_source.jrxml</location>
+		</link>
+		<link>
+			<name>facility_cashbook_by_fund_source_2.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_cashbook_by_fund_source.jrxml</location>
 		</link>
@@ -35,6 +50,26 @@
 			<name>facility_general_ledger.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_general_ledger.jrxml</location>
+		</link>
+		<link>
+			<name>facility_general_ledger_1.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_general_ledger.jrxml</location>
+		</link>
+		<link>
+			<name>facility_journal_voucher.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_journal_voucher.jrxml</location>
+		</link>
+		<link>
+			<name>facility_journal_voucher_1.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_journal_voucher.jrxml</location>
+		</link>
+		<link>
+			<name>facility_journal_voucher_2.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_journal_voucher.jrxml</location>
 		</link>
 		<link>
 			<name>facility_month_revenu.jrxml</name>
@@ -52,6 +87,11 @@
 			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_month_revenu.jrxml</location>
 		</link>
 		<link>
+			<name>facility_month_revenu_3.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_month_revenu.jrxml</location>
+		</link>
+		<link>
 			<name>facility_reconciliation.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_reconciliation.jrxml</location>
@@ -62,12 +102,27 @@
 			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_reconciliation.jrxml</location>
 		</link>
 		<link>
+			<name>facility_reconciliation_2.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_reconciliation.jrxml</location>
+		</link>
+		<link>
+			<name>facility_reconciliation_3.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/facility_reconciliation.jrxml</location>
+		</link>
+		<link>
 			<name>fund_source_revenue.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/js-report/ffars/MyReports/fund_source_revenue.jrxml</location>
 		</link>
 		<link>
 			<name>fund_source_revenue_1.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/fund_source_revenue.jrxml</location>
+		</link>
+		<link>
+			<name>fund_source_revenue_2.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/js-report/ffars/MyReports/fund_source_revenue.jrxml</location>
 		</link>
@@ -117,6 +172,16 @@
 			<location>/home/chris/Projects/js-report/ffars/MyReports/reconciliation_status.jrxml</location>
 		</link>
 		<link>
+			<name>reconciliation_status_1.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/reconciliation_status.jrxml</location>
+		</link>
+		<link>
+			<name>reconciliation_status_2.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/reconciliation_status.jrxml</location>
+		</link>
+		<link>
 			<name>sample.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/ffars-api/resources/jasper/source/sample.jrxml</location>
@@ -138,6 +203,11 @@
 		</link>
 		<link>
 			<name>ward_village_3.jrxml</name>
+			<type>1</type>
+			<location>/home/chris/Projects/js-report/ffars/MyReports/ward_village.jrxml</location>
+		</link>
+		<link>
+			<name>ward_village_4.jrxml</name>
 			<type>1</type>
 			<location>/home/chris/Projects/js-report/ffars/MyReports/ward_village.jrxml</location>
 		</link>
