@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="facility_receipt_and_payments" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/facility_general_ledger_files/rxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/facility_general_ledger"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="recepit_and_payments" uuid="d45840f4-d0db-42bd-95d8-3bc6ab1b993d">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<parameter name="facility_id" class="java.lang.Long"/>
+		<parameter name="start_date" class="java.sql.Date"/>
+		<parameter name="end_date" class="java.sql.Date"/>
+		<queryString language="SQL">
+			<![CDATA[ select
+
+          '' as code,
+          'Opening Balance' as description,
+            sum(amount) as receipt,
+            0.00 as payment
+           from fund_trackings fr
+           where fr.facility_id = $P{facility_id} and fr.date < $P{start_date}::date
+
+           UNION ALL
+
+           select
+               gc.code,
+               gc.name as description,
+               SUM(case when ga.gl_account_type = 'REVENUE' then (ge.cr_amount -ge.dr_amount) else 0 end) as receipt,
+               SUM(case when ga.gl_account_type = 'EXPENDITURE' then (ge.dr_amount -ge.cr_amount) else 0 end) as expenditure
+           from gl_entries ge
+               join gl_accounts as ga
+           on ga.code=ge.account
+               join gl_entry_groups as geg on geg.id = ge.gl_entry_group_id
+               left join gfs_codes gc on gc.code = ga.gfs_code
+           where ga.gl_account_type in ('EXPENDITURE', 'REVENUE')
+                 and geg.apply_date between $P{start_date}::date and $P{end_date}
+            and ga.facility_id=$P{facility_id}
+            group by gc.id]]>
+		</queryString>
+		<field name="code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="code"/>
+			<property name="com.jaspersoft.studio.field.label" value="code"/>
+		</field>
+		<field name="description" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="description"/>
+			<property name="com.jaspersoft.studio.field.label" value="description"/>
+		</field>
+		<field name="receipt" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="receipt"/>
+			<property name="com.jaspersoft.studio.field.label" value="receipt"/>
+		</field>
+		<field name="payment" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="payment"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment"/>
+		</field>
+		<variable name="receipt_total" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{receipt}]]></variableExpression>
+		</variable>
+		<variable name="payment_total" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{payment}]]></variableExpression>
+		</variable>
+	</subDataset>
+	<parameter name="facility_id" class="java.lang.Long"/>
+	<parameter name="start_date" class="java.sql.Date"/>
+	<parameter name="end_date" class="java.sql.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select
+name as facility,
+ftype as type,
+cname as council
+from facility_ward_view where id=$P{facility_id};]]>
+	</queryString>
+	<field name="facility" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="type"/>
+		<property name="com.jaspersoft.studio.field.label" value="type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="council" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="council"/>
+		<property name="com.jaspersoft.studio.field.label" value="council"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="139" splitType="Stretch">
+			<image hAlign="Center" onErrorType="Blank">
+				<reportElement x="234" y="5" width="86" height="75" uuid="d0e910af-28b2-4a75-872e-fbab450fcc5e"/>
+				<imageExpression><![CDATA["repo:/Images/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="192" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="153" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="193" y="118" width="168" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Receipts and Payment report]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="2" y="118" width="187" height="19" uuid="1db595bc-dd6f-4b83-bc0e-1c182b083619">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facility}+ " " +$F{type}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="365" y="120" width="188" height="19" uuid="f35f7cc6-1add-4305-aa72-9407d2d2e338">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[DATEFORMAT( $P{start_date},"MMM dd, yyyy") + " - " +DATEFORMAT( $P{end_date},"MMM dd, yyyy")]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="150" y="103" width="254" height="19" uuid="7517af8e-8409-441b-aecc-9221d89e34bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{council}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="200">
+			<componentElement>
+				<reportElement x="3" y="6" width="548" height="120" uuid="a46c5230-0dc3-4caa-b038-392486f97a56">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="recepit_and_payments" uuid="c2dc4d12-022b-4268-813c-efb3d7d9068b">
+						<datasetParameter name="facility_id">
+							<datasetParameterExpression><![CDATA[$P{facility_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="end_date">
+							<datasetParameterExpression><![CDATA[$P{end_date}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="start_date">
+							<datasetParameterExpression><![CDATA[$P{start_date}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:columnGroup width="348" uuid="e4b576c0-54a4-405b-8625-1777e416095d">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Columns [2]"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="348" height="30" uuid="f0cae4c5-d27d-4478-96c8-5768eda9580e"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Balance]]></text>
+							</staticText>
+						</jr:tableFooter>
+						<jr:column width="90" uuid="3b2daf38-aaeb-4220-89e7-e8f4bffe50b6">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<staticText>
+									<reportElement x="0" y="0" width="90" height="30" uuid="b7faa15b-6ce0-4688-8ab1-c0cf115cc682"/>
+									<box padding="4"/>
+									<textElement verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<text><![CDATA[Total]]></text>
+								</staticText>
+							</jr:tableFooter>
+							<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<staticText>
+									<reportElement x="0" y="0" width="90" height="30" uuid="140b1732-5bf4-4f48-bf4f-ff7401fcba5f"/>
+									<box padding="4"/>
+									<textElement verticalAlignment="Middle">
+										<font fontName="SansSerif" size="9" isBold="true"/>
+									</textElement>
+									<text><![CDATA[Code]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="30">
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField>
+									<reportElement x="0" y="0" width="90" height="30" uuid="88131650-4fa5-49d9-8156-bfac53bd197a"/>
+									<box padding="4"/>
+									<textElement verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+						<jr:column width="258" uuid="01185c73-9b74-4391-82eb-d80535c4847c">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:tableFooter>
+							<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<staticText>
+									<reportElement x="0" y="0" width="258" height="30" uuid="07ac66d4-0034-404f-87f4-2cf4d0cbaf89"/>
+									<box padding="4"/>
+									<textElement verticalAlignment="Middle">
+										<font fontName="SansSerif" size="9" isBold="true"/>
+									</textElement>
+									<text><![CDATA[Description]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="30">
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField>
+									<reportElement x="0" y="0" width="258" height="30" uuid="3f57ecd5-92dc-4edf-af0f-e31141e1e494"/>
+									<box padding="4"/>
+									<textElement verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+					</jr:columnGroup>
+					<jr:columnGroup width="200" uuid="26eb487e-95d8-46c6-aa39-77ffa2b6fed9">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Columns [2]"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="200" height="30" uuid="0aa49024-c7ce-4f43-9d05-1afc4e23c86a"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{receipt_total}.subtract($F{payment})]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:column width="100" uuid="54b447ed-1517-4770-95e5-717ce2d5acc3">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column3"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+									<reportElement x="0" y="0" width="100" height="30" uuid="a5a3a832-c2bf-4c1b-abb1-ee781861d007"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{receipt_total}]]></textFieldExpression>
+								</textField>
+							</jr:tableFooter>
+							<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<staticText>
+									<reportElement x="0" y="0" width="100" height="30" uuid="50d08a96-f228-4117-9d47-cc46843efdab"/>
+									<box padding="4"/>
+									<textElement textAlignment="Center" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="9" isBold="true"/>
+									</textElement>
+									<text><![CDATA[Receipt]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="30">
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+									<reportElement x="0" y="0" width="100" height="30" uuid="ce99beda-89fc-4a4a-b1c9-c746fbb4e8e1"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{receipt}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+						<jr:column width="100" uuid="0e982f0d-e42f-4121-bd0e-08ede2969218">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column4"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+									<reportElement x="0" y="0" width="100" height="30" uuid="eee87e70-6f76-480a-991d-adcae0026a8b"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{payment_total}]]></textFieldExpression>
+								</textField>
+							</jr:tableFooter>
+							<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<staticText>
+									<reportElement x="0" y="0" width="100" height="30" uuid="fecb9a12-1836-4b03-9ec3-3a3ca6b67d5f"/>
+									<box padding="4"/>
+									<textElement textAlignment="Center" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="9" isBold="true"/>
+									</textElement>
+									<text><![CDATA[Payment]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="30">
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+									<reportElement x="0" y="0" width="100" height="30" uuid="8289c499-0855-4192-ad7f-6ce6db269feb"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{payment}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+					</jr:columnGroup>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+</jasperReport>

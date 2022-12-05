@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="expenditure by  gfs" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/fund_source_status_all_level_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/fund_source_status_all_level"/>
+	<subDataset name="expenditure" uuid="b8348966-eded-4062-a3e6-e8b0aa1dbc9d">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<queryString language="SQL">
+			<![CDATA[select
+    v.rname,
+    v.cname,
+    v.ftype,
+    v.fname,
+    v.fund_source,
+    g.code,
+    g.name as gfs,
+    sum(dr_amount - cr_amount) as amount
+from vw_transactions v
+join gfs_codes as g on g.code = v.gfs_code
+where type ='gl_entry'
+  and sub_type = 'EXPENDITURE'
+  and apply_date
+  between '2021-07-29':: date and current_date
+group by rname, cname, ftype, fname,fund_source, g.id
+order by rname,cname, ftype, fname,fund_source]]>
+		</queryString>
+		<field name="rname" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="rname"/>
+			<property name="com.jaspersoft.studio.field.label" value="rname"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="cname" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="cname"/>
+			<property name="com.jaspersoft.studio.field.label" value="cname"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="ftype" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="ftype"/>
+			<property name="com.jaspersoft.studio.field.label" value="ftype"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="fname" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fname"/>
+			<property name="com.jaspersoft.studio.field.label" value="fname"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="fund_source" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="code"/>
+			<property name="com.jaspersoft.studio.field.label" value="code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="gfs" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="gfs"/>
+			<property name="com.jaspersoft.studio.field.label" value="gfs"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="amount" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="amount"/>
+			<property name="com.jaspersoft.studio.field.label" value="amount"/>
+		</field>
+	</subDataset>
+	<queryString language="SQL">
+		<![CDATA[select 1]]>
+	</queryString>
+	<field name="?column?" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="?column?"/>
+		<property name="com.jaspersoft.studio.field.label" value="?column?"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="135" splitType="Stretch">
+			<image hAlign="Center">
+				<reportElement x="358" y="5" width="86" height="75" uuid="d0e910af-28b2-4a75-872e-fbab450fcc5e"/>
+				<imageExpression><![CDATA["repo:/ffars/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="316" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="111" width="283" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
+				<textElement textAlignment="Center">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fund Source Status]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="70" splitType="Stretch"/>
+	</detail>
+</jasperReport>

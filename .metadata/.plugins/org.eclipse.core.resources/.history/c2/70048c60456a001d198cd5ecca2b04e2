@@ -1,0 +1,864 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="facility_month_revenue" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/facility_month_revenue_files/rxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/facility_month_revenue"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.25" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.25" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.25" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="revenu" uuid="a92c9ba0-33ab-4a8b-8304-c1e98a4d5de0">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="0"/>
+		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="1000"/>
+		<parameter name="facility_id" class="java.lang.Long"/>
+		<parameter name="financial_year_id" class="java.lang.Long"/>
+		<parameter name="month" class="java.util.Date"/>
+		<queryString language="SQL">
+			<![CDATA[select
+    case when pr.funding_source_code in ('80E','10A', '10B', '10E', '80D','80A','30C', '80C') then 'Own Source' else 'Grant' end as fund,
+    gc.code as gfs_code,
+    gc.name as gfs_description,
+    TO_CHAR($P{month}::DATE, 'Month') as currentMonth,
+    'July' || '-' || to_char((DATE_TRUNC('MONTH', ($P{month})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE, 'Month') as previousMonths ,
+    sum(amount) as budget,
+    sum(coalesce(lc.previous2Amount,0)) as previous2Amount,
+    sum(coalesce(mc.currentAmount,0)) as currentAmount
+from revenue_projections as pr
+join gfs_codes gc on pr.gfs_code = gc.code
+left join (
+    select
+        gc.id as gfs_id,
+        sum(ge.cr_amount - ge.dr_amount) as currentAmount
+    from  gl_entry_groups geg
+              join gl_entries ge on geg.id = ge.gl_entry_group_id
+              join gl_accounts ga on ge.account = ga.code
+              join gfs_codes gc on gc.code = ga.gfs_code
+    where ga.gl_account_type =  'REVENUE'
+      and geg.apply_date >=(DATE_TRUNC('MONTH', ($P{month})::DATE) - INTERVAL '0 MONTH')::DATE
+      and geg.apply_date <=(DATE_TRUNC('MONTH', ($P{month})::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
+      and geg.facility_id = $P{facility_id}
+    group by  gc.id
+) as mc on mc.gfs_id = gc.id
+left join (
+    select
+        gc.id as gfs_id,
+        sum(ge.cr_amount - ge.dr_amount) as previous2Amount
+    from  gl_entry_groups geg
+              join gl_entries ge on geg.id = ge.gl_entry_group_id
+              join gl_accounts ga on ge.account = ga.code
+              join gfs_codes gc on gc.code = ga.gfs_code
+    where ga.gl_account_type =  'REVENUE'
+      and geg.apply_date <= (DATE_TRUNC('MONTH', ($P{month})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE
+      and geg.apply_date >= (select start_date from financial_years where id = 1)
+      and geg.facility_id = $P{facility_id}
+    group by  gc.id
+) as lc on lc.gfs_id = gc.id
+where pr.financial_year_id= $P{financial_year_id}
+  and pr.facility_id = $P{facility_id}
+  and substr(pr.account, 58,1)  not in ('6', '7')
+group by pr.funding_source_code, gc.id
+order by fund desc;]]>
+		</queryString>
+		<field name="fund" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund"/>
+		</field>
+		<field name="gfs_code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="gfs_code"/>
+			<property name="com.jaspersoft.studio.field.label" value="gfs_code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="gfs_description" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="gfs_description"/>
+			<property name="com.jaspersoft.studio.field.label" value="gfs_description"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="currentmonth" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="currentmonth"/>
+			<property name="com.jaspersoft.studio.field.label" value="currentmonth"/>
+		</field>
+		<field name="previousmonths" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="previousmonths"/>
+			<property name="com.jaspersoft.studio.field.label" value="previousmonths"/>
+		</field>
+		<field name="budget" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="budget"/>
+			<property name="com.jaspersoft.studio.field.label" value="budget"/>
+		</field>
+		<field name="previous2amount" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="previous2amount"/>
+			<property name="com.jaspersoft.studio.field.label" value="previous2amount"/>
+		</field>
+		<field name="currentamount" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="currentamount"/>
+			<property name="com.jaspersoft.studio.field.label" value="currentamount"/>
+		</field>
+		<variable name="budget_group_sum" class="java.math.BigDecimal" resetType="Group" resetGroup="fund" calculation="Sum">
+			<variableExpression><![CDATA[$F{budget}]]></variableExpression>
+		</variable>
+		<variable name="prevous_group_sum" class="java.math.BigDecimal" resetType="Group" resetGroup="fund" calculation="Sum">
+			<variableExpression><![CDATA[$F{previous2amount}]]></variableExpression>
+		</variable>
+		<variable name="current_group_sum" class="java.math.BigDecimal" resetType="Group" resetGroup="fund" calculation="Sum">
+			<variableExpression><![CDATA[$F{currentamount}]]></variableExpression>
+		</variable>
+		<variable name="budget_total" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{budget}]]></variableExpression>
+		</variable>
+		<variable name="prevous_total" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{previous2amount}]]></variableExpression>
+		</variable>
+		<variable name="current_total" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{currentamount}]]></variableExpression>
+		</variable>
+		<group name="fund">
+			<groupExpression><![CDATA[$F{fund}]]></groupExpression>
+		</group>
+	</subDataset>
+	<parameter name="facility_id" class="java.lang.Long"/>
+	<parameter name="financial_year_id" class="java.lang.Long"/>
+	<parameter name="month" class="java.sql.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select
+name as facility,
+ftype as type,
+cname as council,
+(select name from financial_years where id =$P{financial_year_id}) as year,
+TO_CHAR($P{month}::date, 'Month') as month
+from facility_ward_view where id=$P{facility_id};]]>
+	</queryString>
+	<field name="facility" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="type"/>
+		<property name="com.jaspersoft.studio.field.label" value="type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="council" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="council"/>
+		<property name="com.jaspersoft.studio.field.label" value="council"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="year" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="year"/>
+		<property name="com.jaspersoft.studio.field.label" value="year"/>
+	</field>
+	<field name="month" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="month"/>
+		<property name="com.jaspersoft.studio.field.label" value="month"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="183" splitType="Stretch">
+			<image hAlign="Center" onErrorType="Blank">
+				<reportElement x="358" y="5" width="86" height="75" uuid="d0e910af-28b2-4a75-872e-fbab450fcc5e"/>
+				<imageExpression><![CDATA["repo:/Images/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="316" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="140" width="283" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Monthly Revenue  Report]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="274" y="122" width="254" height="19" uuid="1db595bc-dd6f-4b83-bc0e-1c182b083619">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facility}+ " " +$F{type}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="329" y="161" width="144" height="19" uuid="f35f7cc6-1add-4305-aa72-9407d2d2e338">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{month}+ "-" + $F{year}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="277" y="103" width="254" height="19" uuid="7517af8e-8409-441b-aecc-9221d89e34bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{council}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="176">
+			<componentElement>
+				<reportElement x="3" y="6" width="794" height="150" uuid="19b48ada-d83d-4642-9fe6-a54f00663395">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+					<property name="com.jaspersoft.studio.components.autoresize.next" value="true"/>
+					<property name="com.jaspersoft.studio.components.autoresize.proportional" value="true"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="revenu" uuid="39a033ea-37ac-40ff-bb10-41ab8796bcbc">
+						<datasetParameter name="facility_id">
+							<datasetParameterExpression><![CDATA[$P{facility_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="financial_year_id">
+							<datasetParameterExpression><![CDATA[$P{financial_year_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="month">
+							<datasetParameterExpression><![CDATA[$P{month}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="81" uuid="d5bf0529-a838-4a86-92a8-124f138e41bc">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="81" height="30" uuid="50eea147-9c55-449b-a81f-30e0d8f137fd"/>
+								<box padding="4"/>
+								<textElement textAlignment="Left" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[GrandTotal]]></text>
+							</staticText>
+						</jr:tableFooter>
+						<jr:groupHeader groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField>
+									<reportElement x="0" y="0" width="80" height="30" uuid="f09851d5-f6ff-4407-b3c4-4046d9cc658d"/>
+									<box padding="4"/>
+									<textElement>
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{fund}]]></textFieldExpression>
+								</textField>
+							</jr:cell>
+						</jr:groupHeader>
+						<jr:groupFooter groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<staticText>
+									<reportElement x="0" y="0" width="81" height="30" uuid="f22d0fe1-40ef-4947-9228-408d18fcfaeb"/>
+									<box padding="4"/>
+									<textElement textAlignment="Left" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="9" isBold="true"/>
+									</textElement>
+									<text><![CDATA[Sub Total]]></text>
+								</staticText>
+							</jr:cell>
+						</jr:groupFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="2">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="81" height="30" uuid="54c9b1ea-4b71-43c7-8966-0a3dab38d709"/>
+								<box padding="4"/>
+								<textElement>
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[GFS code]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.0"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField>
+								<reportElement x="0" y="0" width="81" height="30" uuid="e183fe27-569c-4f96-9791-7ce6dad13e2c"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{gfs_code}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="202" uuid="f110ef9d-7963-4b02-95bb-7739492dcbee">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+						</jr:tableFooter>
+						<jr:groupHeader groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:cell>
+						</jr:groupHeader>
+						<jr:groupFooter groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:cell>
+						</jr:groupFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="2">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="202" height="30" uuid="1936cc03-b35a-4131-8246-cc1f375c0315"/>
+								<box padding="4"/>
+								<textElement>
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[GFS code description]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.0"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField>
+								<reportElement x="0" y="0" width="202" height="30" uuid="b758f4d8-043b-4653-af78-1d33d853064f"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{gfs_description}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="86" uuid="49b97f29-1af5-487f-8d64-7571898cc618">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column3"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="86" height="30" uuid="2963ea0e-f85f-477f-8f03-dcac00f9e316"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{budget_total}]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:groupHeader groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:cell>
+						</jr:groupHeader>
+						<jr:groupFooter groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="7c5c38c7-32ab-4a2e-9a0f-9b0f868f7202"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{budget_group_sum}]]></textFieldExpression>
+								</textField>
+							</jr:cell>
+						</jr:groupFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="2">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="86" height="30" uuid="fc69911e-81bf-449d-b553-4ddbdd2b4f78"/>
+								<box padding="4"/>
+								<textElement>
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Budget]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.0"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="86" height="30" uuid="7cd7f4a7-9bc1-43d9-893b-e539077b2a9d"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{budget}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:columnGroup width="170" uuid="4c4ae5a9-18e8-4375-8e4f-1c6e67ffff0f">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Columns [2]"/>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<box>
+								<topPen lineWidth="0.25"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="170" height="30" uuid="ad66a276-bc1c-4d88-a52e-e3ddc397738d"/>
+								<box padding="4"/>
+								<textElement>
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Amount Earned/Collected/Received]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:column width="85" uuid="fb1d95be-30a7-4632-b2a6-f52eae973892">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column4"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="3351097d-ea0e-41b1-859d-eda51e3d3728"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{prevous_total}]]></textFieldExpression>
+								</textField>
+							</jr:tableFooter>
+							<jr:groupHeader groupName="fund">
+								<jr:cell style="Table_CH" height="30" rowSpan="1">
+									<box>
+										<leftPen lineWidth="0.0"/>
+										<rightPen lineWidth="0.0"/>
+									</box>
+									<textField>
+										<reportElement isPrintRepeatedValues="false" x="0" y="0" width="85" height="30" uuid="0fac9651-969b-460d-8d30-4735014e51d3"/>
+										<box padding="4"/>
+										<textElement>
+											<font fontName="SansSerif" size="9" isBold="true"/>
+										</textElement>
+										<textFieldExpression><![CDATA[$F{previousmonths}]]></textFieldExpression>
+									</textField>
+								</jr:cell>
+							</jr:groupHeader>
+							<jr:groupFooter groupName="fund">
+								<jr:cell style="Table_CH" height="30" rowSpan="1">
+									<box>
+										<leftPen lineWidth="0.0"/>
+										<rightPen lineWidth="0.0"/>
+									</box>
+									<textField textAdjust="ScaleFont" pattern="#,##0.00">
+										<reportElement x="0" y="0" width="85" height="30" uuid="5d2205b5-d63e-4f9d-96e2-d6d031b733cf"/>
+										<box padding="4"/>
+										<textElement textAlignment="Right" verticalAlignment="Middle">
+											<font fontName="SansSerif" size="8" isBold="true"/>
+										</textElement>
+										<textFieldExpression><![CDATA[$V{prevous_group_sum}]]></textFieldExpression>
+									</textField>
+								</jr:cell>
+							</jr:groupFooter>
+							<jr:columnHeader style="Table_CH" height="0" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="30">
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="e3a5514e-a814-4acf-a87c-651016c18c90"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{previous2amount}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+						<jr:column width="85" uuid="5d96a0b9-ed06-4d12-8901-d44d9598ab75">
+							<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column5"/>
+							<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="b62ca1fe-876c-4258-a700-451954192150"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{current_total}]]></textFieldExpression>
+								</textField>
+							</jr:tableFooter>
+							<jr:groupHeader groupName="fund">
+								<jr:cell style="Table_CH" height="30" rowSpan="1">
+									<box>
+										<leftPen lineWidth="0.0"/>
+										<rightPen lineWidth="0.0"/>
+									</box>
+									<textField>
+										<reportElement isPrintRepeatedValues="false" x="0" y="0" width="85" height="30" uuid="5ee7fcce-f1a9-476b-9e67-7c36c3c285b4"/>
+										<box padding="4"/>
+										<textElement>
+											<font fontName="SansSerif" size="9" isBold="true"/>
+										</textElement>
+										<textFieldExpression><![CDATA[$F{currentmonth}]]></textFieldExpression>
+									</textField>
+								</jr:cell>
+							</jr:groupHeader>
+							<jr:groupFooter groupName="fund">
+								<jr:cell style="Table_CH" height="30" rowSpan="1">
+									<box>
+										<leftPen lineWidth="0.0"/>
+										<rightPen lineWidth="0.0"/>
+									</box>
+									<textField textAdjust="ScaleFont" pattern="#,##0.00">
+										<reportElement x="0" y="0" width="85" height="30" uuid="b7021bd6-aff3-4a16-85d1-2987c9dee81b"/>
+										<box padding="4"/>
+										<textElement textAlignment="Right" verticalAlignment="Middle">
+											<font fontName="SansSerif" size="8" isBold="true"/>
+										</textElement>
+										<textFieldExpression><![CDATA[$V{current_group_sum}]]></textFieldExpression>
+									</textField>
+								</jr:cell>
+							</jr:groupFooter>
+							<jr:columnHeader style="Table_CH" height="0" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.width" value="px"/>
+								<property name="com.jaspersoft.studio.unit.height" value="px"/>
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="30">
+								<box>
+									<topPen lineWidth="0.0"/>
+									<leftPen lineWidth="0.0"/>
+									<bottomPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="68022853-0d83-4b8b-b8b6-4799297f630d"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{currentamount}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+					</jr:columnGroup>
+					<jr:column width="85" uuid="9812b730-deb6-4edc-9614-60d40b766509">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column6"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="85" height="30" uuid="d93c8ef8-f2f3-43a6-ac0c-eea9f8f1f9f2"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{current_total}.add( $V{prevous_total})]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:groupHeader groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:cell>
+						</jr:groupHeader>
+						<jr:groupFooter groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="3ac68d80-cde0-4607-9929-b0a3b97b4526"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{prevous_group_sum}.add($V{current_group_sum})]]></textFieldExpression>
+								</textField>
+							</jr:cell>
+						</jr:groupFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="2">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="85" height="30" uuid="c066eada-1dc3-44f7-a88e-2011ed9ef925"/>
+								<box padding="4"/>
+								<textElement>
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Cumulative Earned/Collected/Received]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.0"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="85" height="30" uuid="7c41486a-df23-4c29-976d-c1cd73c8980d"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{currentamount}.add($F{previous2amount})]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="85" uuid="2b887e38-1303-4008-a1b6-f225dd4355b9">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column7"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="85" height="30" uuid="787cb2c2-3d82-408c-aba3-4e21f034d737"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{budget_total}.subtract($V{current_total}.add( $V{prevous_total}))]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:groupHeader groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:cell>
+						</jr:groupHeader>
+						<jr:groupFooter groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="d6cb560b-0174-4e38-bd03-16cbac4766c2"/>
+									<box padding="4"/>
+									<textElement textAlignment="Right" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{budget_group_sum}.subtract( $V{prevous_group_sum}.add($V{current_group_sum}  ))]]></textFieldExpression>
+								</textField>
+							</jr:cell>
+						</jr:groupFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="2">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="85" height="30" uuid="349a9fe9-5637-42e4-a9a9-37a22671970b"/>
+								<box padding="4"/>
+								<textElement>
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Difference]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.0"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="85" height="30" uuid="e351fa69-86d9-40d1-9cfb-be389e64bf7d"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{budget}.subtract($F{currentamount}.add($F{previous2amount}))]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="85" uuid="e7aedabb-24df-4b9b-a0b1-104535308f80">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column8"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00">
+								<reportElement x="0" y="0" width="85" height="30" uuid="e67c80d7-224c-4434-a9fd-4dc262efe4bd"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{budget_total}.compareTo(BigDecimal.ZERO) > 0  ?  (($V{current_total}.add($V{prevous_total})).divide($V{budget_total},2)).doubleValue() * 100  : 0]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:groupHeader groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+							</jr:cell>
+						</jr:groupHeader>
+						<jr:groupFooter groupName="fund">
+							<jr:cell style="Table_CH" height="30" rowSpan="1">
+								<box>
+									<leftPen lineWidth="0.0"/>
+									<rightPen lineWidth="0.0"/>
+								</box>
+								<textField textAdjust="ScaleFont" pattern="#,##0.00">
+									<reportElement x="0" y="0" width="85" height="30" uuid="3c0c0d59-0946-486b-a845-f7723f68462b"/>
+									<box padding="4"/>
+									<textElement textAlignment="Center" verticalAlignment="Middle">
+										<font fontName="SansSerif" size="8" isBold="true"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$V{budget_group_sum}.compareTo(BigDecimal.ZERO) > 0  ?  (($V{current_group_sum}.add($V{prevous_group_sum})).divide($V{budget_group_sum},2)).doubleValue() * 100  : 0]]></textFieldExpression>
+								</textField>
+							</jr:cell>
+						</jr:groupFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="2">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<box>
+								<leftPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<staticText>
+								<reportElement x="0" y="0" width="85" height="30" uuid="7bf7059a-912f-43ee-bab2-f24705346f50"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Performance (%)]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<box>
+								<topPen lineWidth="0.0"/>
+								<leftPen lineWidth="0.0"/>
+								<bottomPen lineWidth="0.0"/>
+								<rightPen lineWidth="0.0"/>
+							</box>
+							<textField>
+								<reportElement x="0" y="0" width="85" height="30" uuid="db153f28-3c92-400e-8da2-644329503de4"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{budget}.compareTo(BigDecimal.ZERO) > 0  ?  (($F{currentamount}.add($F{previous2amount})).divide($F{budget},2)).doubleValue() * 100  : 0]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+</jasperReport>

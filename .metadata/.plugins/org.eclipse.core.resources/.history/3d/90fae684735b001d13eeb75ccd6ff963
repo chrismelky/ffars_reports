@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="expenditure by  gfs" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/fund_source_status_all_level_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/fund_source_status_all_level"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="expenditure" uuid="b8348966-eded-4062-a3e6-e8b0aa1dbc9d">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<parameter name="location_id" class="java.lang.Long"/>
+		<parameter name="start_date" class="java.sql.Date"/>
+		<parameter name="end_date" class="java.sql.Date"/>
+		<queryString language="SQL">
+			<![CDATA[select
+    v.rname,
+    v.cname,
+    v.ftype,
+    v.fname,
+    v.fund_source,
+    g.code,
+    g.name as gfs,
+    sum(dr_amount - cr_amount) as amount
+from vw_transactions v
+join gfs_codes as g on g.code = v.gfs_code
+join facility_ward_view fw on fw.id = v.facility_id
+where type ='gl_entry'
+  and sub_type = 'EXPENDITURE'
+  and (rid = $P{location_id} or cid = $P{location_id} or wid= $P{location_id} or 1= $P{location_id})
+  and apply_date
+  between  $P{start_date}:: date and $P{end_date}
+group by v.rname, v.cname, v.ftype, fname,fund_source, g.id
+order by rname,cname, ftype, fname,fund_source
+]]>
+		</queryString>
+		<field name="rname" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="rname"/>
+			<property name="com.jaspersoft.studio.field.label" value="rname"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="cname" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="cname"/>
+			<property name="com.jaspersoft.studio.field.label" value="cname"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="ftype" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="ftype"/>
+			<property name="com.jaspersoft.studio.field.label" value="ftype"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="fname" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fname"/>
+			<property name="com.jaspersoft.studio.field.label" value="fname"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="fund_source" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="vw_transactions"/>
+		</field>
+		<field name="code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="code"/>
+			<property name="com.jaspersoft.studio.field.label" value="code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="gfs" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="gfs"/>
+			<property name="com.jaspersoft.studio.field.label" value="gfs"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="amount" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="amount"/>
+			<property name="com.jaspersoft.studio.field.label" value="amount"/>
+		</field>
+	</subDataset>
+	<parameter name="location_id" class="java.lang.Long"/>
+	<parameter name="start_date" class="java.sql.Date"/>
+	<parameter name="end_date" class="java.sql.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select name
+ from admin_areas where id =$P{location_id}]]>
+	</queryString>
+	<field name="name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="name"/>
+		<property name="com.jaspersoft.studio.field.label" value="name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="admin_areas"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="168" splitType="Stretch">
+			<image hAlign="Center" onErrorType="Blank">
+				<reportElement x="358" y="5" width="86" height="75" uuid="d0e910af-28b2-4a75-872e-fbab450fcc5e"/>
+				<imageExpression><![CDATA["repo:/Images/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="316" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="125" width="283" height="14" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Expenditure By Gfs Code]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="260" y="140" width="283" height="19" uuid="73bb4ce2-6c76-4f2b-9e44-f6a25dd46600">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["From " +DATEFORMAT( $P{start_date}, "MMM dd, yyyy") +" to " +DATEFORMAT($P{end_date}, "MMM dd, yyyy" )]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="260" y="105" width="283" height="19" uuid="fcd160a3-27f6-4ab8-b0fe-438a05191b65">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="66" splitType="Stretch">
+			<componentElement>
+				<reportElement x="0" y="0" width="800" height="60" uuid="0eb225e1-e332-4f9d-9cc2-903ff8e5c5fe">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="expenditure" uuid="76d3c3ad-83f3-4d92-9487-aeba9f42166e">
+						<datasetParameter name="location_id">
+							<datasetParameterExpression><![CDATA[$P{location_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="start_date">
+							<datasetParameterExpression><![CDATA[$P{start_date}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="end_date">
+							<datasetParameterExpression><![CDATA[$P{end_date}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="80" uuid="4967aa07-c6fe-42f7-ae4a-627f6025b3c5">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="80" height="30" uuid="f65abb49-f9ed-4a54-a40c-f445c773e03b"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Region]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="80" height="30" uuid="016477b7-209d-4f35-82f1-76873377ea30"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{rname}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="80" uuid="774c6979-ab37-4895-ab7c-c17f1fc9c4f4">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="80" height="30" uuid="bb202f10-dbc3-4dc7-aff6-6b913fb8abc3"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Council]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="80" height="30" uuid="07e204f9-a7ea-483a-a2ea-8307edf99d84"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{cname}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="70" uuid="f56acca5-45e4-4d76-8f86-54b7286f9e18">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="70" height="30" uuid="4c3d0b7c-bb89-4591-838b-d07410e105b0"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Facility Type]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="70" height="30" uuid="57917d39-0fac-4a3e-8eff-0b358975b0cd"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{ftype}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="80" uuid="abb72df4-e802-47e3-a1cc-28e0ea24a319">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="80" height="30" uuid="4201e4e0-039e-4a22-8ef0-c7509fa3c1e2"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Facility]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="80" height="30" uuid="5802c651-efe6-4676-80f6-ba943179f84c"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{fname}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="150" uuid="1a1eb6c5-d253-49aa-b3be-7ac42b00e7ce">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="150" height="30" uuid="6e36bda9-d4d2-4fc4-9f3b-ff6892632fbc"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Fund Source]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="StretchHeight">
+								<reportElement x="0" y="0" width="150" height="30" uuid="50197229-fcd1-4255-8e8c-2be093cfa01b"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{fund_source}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="70" uuid="e8011bb4-6ce9-4564-b6a3-31e53bbe50d8">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="70" height="30" uuid="e5960431-ee7d-4a6e-b52d-da4941b0f4b6"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Gfs Code]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="70" height="30" uuid="8bd5ca2d-2027-4d17-b0fb-04fdb64ab513"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="170" uuid="1f46b73e-dbfc-4c64-95e7-93b82ae851eb">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="170" height="30" uuid="36df3b31-d4da-48d0-a474-4815a1f39e76"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Gfs Description]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="170" height="30" uuid="405d6b5b-6ebc-4212-aadd-8b1baa46cfc5"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{gfs}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="100" uuid="8d273333-1260-4c1a-b953-449f74609071">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="100" height="30" uuid="f214dd72-05a7-42b2-b561-1dab9cce2c5d"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Amount]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;">
+								<reportElement x="0" y="0" width="100" height="30" uuid="b5a71bd4-9b6b-4e36-9bd0-baf0d9ab1da2"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+</jasperReport>

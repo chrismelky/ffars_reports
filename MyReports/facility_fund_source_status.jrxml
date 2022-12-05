@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="facility_fund_source_status" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/facility_general_ledger_files/rxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/facility_general_ledger"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="fund status" uuid="05ffbebc-ffdf-40f4-b026-05c8c652f378">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="261"/>
+		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="732"/>
+		<parameter name="facility_id" class="java.lang.Long"/>
+		<parameter name="start_date" class="java.sql.Date"/>
+		<parameter name="end_date" class="java.sql.Date"/>
+		<queryString language="SQL">
+			<![CDATA[Select
+    f.description as fund_source,
+    f.code as fund_code,
+    coalesce(op.amount,0) as carried,
+    coalesce(cr.receipt,0) as receipt,
+    coalesce(cr.expediture,0) as expediture
+    from (
+select
+    fr.funding_source_id,
+    sum(case when fr.transaction_type != 'App\Models\Payable' then fr.amount else 0 end) as receipt,
+    sum(case when fr.transaction_type = 'App\Models\Payable' then -1 * fr.amount else 0 end) as expediture
+from fund_trackings fr
+where  facility_id = $P{facility_id} and date >= $P{start_date}:: date and date <= $P{end_date}
+group by fr.funding_source_id) cr
+full outer join (
+    select
+        funding_source_id,
+        sum(amount) as amount
+    from fund_trackings fr
+    where  facility_id =  $P{facility_id} and date < $P{start_date}:: date
+    group by fr.funding_source_id
+) as op on op.funding_source_id = cr.funding_source_id
+join funding_sources f on (f.id = cr.funding_source_id or f.id =op.funding_source_id)]]>
+		</queryString>
+		<field name="fund_source" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_source"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="fund_code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="fund_code"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="carried" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="carried"/>
+			<property name="com.jaspersoft.studio.field.label" value="carried"/>
+		</field>
+		<field name="receipt" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="receipt"/>
+			<property name="com.jaspersoft.studio.field.label" value="receipt"/>
+		</field>
+		<field name="expediture" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="expediture"/>
+			<property name="com.jaspersoft.studio.field.label" value="expediture"/>
+		</field>
+		<variable name="totalCarried" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{carried}]]></variableExpression>
+		</variable>
+		<variable name="totalReceipt" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{receipt}]]></variableExpression>
+		</variable>
+		<variable name="totalFund" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{receipt}.add($F{carried})]]></variableExpression>
+		</variable>
+		<variable name="totalExpenditure" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{expediture}]]></variableExpression>
+		</variable>
+		<variable name="Totalbalance" class="java.math.BigDecimal" calculation="Sum">
+			<variableExpression><![CDATA[$F{carried}.add($F{receipt}).subtract($F{expediture})]]></variableExpression>
+		</variable>
+	</subDataset>
+	<parameter name="facility_id" class="java.lang.Long"/>
+	<parameter name="start_date" class="java.sql.Date"/>
+	<parameter name="end_date" class="java.sql.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select
+name as facility,
+ftype as type,
+cname as council
+from facility_ward_view where id=$P{facility_id};]]>
+	</queryString>
+	<field name="facility" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="type"/>
+		<property name="com.jaspersoft.studio.field.label" value="type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="council" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="council"/>
+		<property name="com.jaspersoft.studio.field.label" value="council"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="183" splitType="Stretch">
+			<image hAlign="Center" onErrorType="Blank">
+				<reportElement x="358" y="5" width="86" height="75" uuid="d0e910af-28b2-4a75-872e-fbab450fcc5e"/>
+				<imageExpression><![CDATA["repo:/Images/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="316" y="82" width="170" height="10" uuid="49e1f0a9-d4ee-4c42-90d0-b3a4d4102d4e"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="140" width="283" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fund Source Status]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="274" y="122" width="254" height="19" uuid="1db595bc-dd6f-4b83-bc0e-1c182b083619">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facility}+ " " +$F{type}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="277" y="161" width="243" height="19" uuid="f35f7cc6-1add-4305-aa72-9407d2d2e338">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[DATEFORMAT( $P{start_date},"MMM dd, yyyy") + "  -  " +DATEFORMAT( $P{end_date},"MMM dd, yyyy")]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="277" y="103" width="254" height="19" uuid="7517af8e-8409-441b-aecc-9221d89e34bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box padding="4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{council}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="97">
+			<componentElement>
+				<reportElement x="0" y="0" width="800" height="90" uuid="d94c5afe-4abf-4adf-a4b3-bc74b813e8a1">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="fund status" uuid="db73afee-6f3d-419b-b750-33280e4d1657">
+						<datasetParameter name="facility_id">
+							<datasetParameterExpression><![CDATA[$P{facility_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="start_date">
+							<datasetParameterExpression><![CDATA[$P{start_date}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="end_date">
+							<datasetParameterExpression><![CDATA[$P{end_date}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="70" uuid="a4bb48a9-ef7a-4379-9f0a-5b397a16d625">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1"/>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="70" height="30" uuid="dafff437-7c67-473b-909c-15e411e428e2"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Fund Source Code]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="70" height="30" uuid="624c6116-53e2-4034-a390-aa51c3d0f7f9"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{fund_code}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="280" uuid="4ebc95fb-a1fa-43f9-ac6a-fde6462a3852">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="280" height="30" uuid="631f5915-9671-4730-ad04-a809d2dbb4fd"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Total]]></text>
+							</staticText>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="280" height="30" uuid="0bc79ff3-241b-49cf-b1d5-5f96bcb998e5"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Fund Source Description]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="280" height="30" uuid="7aa84968-954f-4c08-a76f-253baf22a690"/>
+								<box padding="4"/>
+								<textElement verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{fund_source}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="f54de523-ca53-4fd2-8afc-13f7cbdf010c">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column3"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="93c3ae70-18cd-4743-8f99-5560073ce678"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{totalCarried}]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="0c0e80de-b617-4982-aa67-ba1ad2b08d5a"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Carried Over Fund]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="16509072-27b2-49a3-abc6-62731d3166c5"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{carried}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="ff582e56-b9f5-4212-9255-ad5e2f6288ae">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column4"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="0d85e260-3eb0-4d35-b8ce-1d975a20d66d"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{totalReceipt}]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="e49bc80a-5256-4687-a82a-aa19a662e0f0"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Receipts]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="690c3968-9335-4355-b067-c1b37ddc8eb7"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{receipt}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="ced69d9e-e830-4d9b-a8d3-1231fda8a412">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column5"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="f72df8d4-6197-4c7f-932a-52ddd0950d5c"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{totalFund}]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="45a50ba2-b859-4bff-9cb6-3f71218c6d4e"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Total Fund]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="811f4dc3-625e-435c-8c1b-6b919c3c4d18"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{receipt}.add($F{carried})]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="f8f9a481-a7a8-4ea9-bdfc-5c7cb1b4a9a8">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column6"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="7b4554c8-93af-482c-9e65-41ed9f950c46"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{totalExpenditure}]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="2f8b4cfa-fd2b-4d1e-aa3a-1802835beb3a"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Expenditure]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="54fdbefa-788b-4659-8d7d-71a495a36b1d"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{expediture}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="02cfa36f-5865-49cf-8e99-52de99436414">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column7"/>
+						<jr:tableFooter style="Table_TH" height="30" rowSpan="1">
+							<property name="com.jaspersoft.studio.unit.width" value="px"/>
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="f98c7357-4f2e-482a-9e6a-43718823e349"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8" isBold="true"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$V{Totalbalance}]]></textFieldExpression>
+							</textField>
+						</jr:tableFooter>
+						<jr:columnHeader style="Table_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="606f2cf1-0768-4d25-b689-44a359eb43e0"/>
+								<box padding="4"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="9" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Fund Balance]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField textAdjust="ScaleFont" pattern="#,##0.00;(#,##0.00)">
+								<reportElement x="0" y="0" width="90" height="30" uuid="6b837511-c67b-4686-94c3-a1e1b6586487"/>
+								<box padding="4"/>
+								<textElement textAlignment="Right" verticalAlignment="Middle">
+									<font fontName="SansSerif" size="8"/>
+								</textElement>
+								<textFieldExpression><![CDATA[$F{receipt}.add($F{carried}).subtract($F{expediture})]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+</jasperReport>

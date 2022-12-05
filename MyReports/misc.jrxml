@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="fund_source_status_all_level" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/fund_source_status_all_level_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/fund_source_status_all_level"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="fund" uuid="b8348966-eded-4062-a3e6-e8b0aa1dbc9d">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
+		<queryString language="SQL">
+			<![CDATA[select
+    wv.rname as region,
+    wv.cname as council,
+    ft.name as type,
+    wv.name as facility,
+    fs.code,
+    fs.description,
+    gfs.name as gfs,
+    gfs.code as gfscode,
+    sum(budget) as budget,
+    sum(carryover) as carryover,
+    sum(current) as current,
+    sum(expenditure) as expenditure,
+    sum(carryover + current - expenditure) as fund_balance
+from facility_ward_view  wv join facilities f on f.id = wv.id
+    join facility_types ft on ft.id = f.facility_type_id
+    left join (select fr.facility_id,gl.gfs_code,funding_source_id,0.00        as budget,sum(amount) as carryover,0.00        as current,0.00        as expenditure from fund_trackings fr join gl_accounts gl on gl.code  = fr.gl_account where (fr.financial_year_id = 2) group by fr.funding_source_id, fr.facility_id,gfs_code UNION ALL select fr.facility_id,gl.gfs_code,funding_source_id,0.00        as budget,0.00        as carryover,sum(amount) as current,0.00        as expenditure from fund_trackings fr join gl_accounts gl on gl.code  = fr.gl_account where fr.date between '2022-07-01' and '2022-09-30' and fr.transaction_type != 'App\Models\Payable' group by fr.funding_source_id, fr.facility_id,gl.gfs_code union all select fr.facility_id,gl.gfs_code,funding_source_id,0.00             as budget,0.00             as carryover,0.00             as current,sum(-1 * amount) as expenditure from fund_trackings fr join gl_accounts gl on gl.code  = fr.gl_account where fr.date between '2022-07-01' and '2022-09-30' and fr.transaction_type = 'App\Models\Payable' group by fr.funding_source_id, fr.facility_id,gfs_code union all select facility_id,gc.code as gfs_code,funding_source_id,sum(amount) as budget,0.00        as carryover,0.00  as current,0.00        as expenditure from activity_costings ac join gfs_codes gc on ac.gfs_code_id = gc.id where ac.financial_year_id = 1 group by ac.funding_source_id, ac.facility_id,gc.code)sub on f.id = sub.facility_id join gfs_codes gfs on gfs.code = sub.gfs_code join funding_sources fs on fs.id = sub.funding_source_id and fs.id in (44,60,29,107)group by wv.rname, wv.cname, ft.name, wv.name, fs.code, fs.description,gfs.code, gfs.name;]]>
+		</queryString>
+		<field name="region" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="region"/>
+			<property name="com.jaspersoft.studio.field.label" value="region"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+		</field>
+		<field name="council" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="council"/>
+			<property name="com.jaspersoft.studio.field.label" value="council"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+		</field>
+		<field name="type" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="type"/>
+			<property name="com.jaspersoft.studio.field.label" value="type"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facility_types"/>
+		</field>
+		<field name="facility" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="facility"/>
+			<property name="com.jaspersoft.studio.field.label" value="facility"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+		</field>
+		<field name="code" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="code"/>
+			<property name="com.jaspersoft.studio.field.label" value="code"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="description" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="description"/>
+			<property name="com.jaspersoft.studio.field.label" value="description"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+		</field>
+		<field name="gfs" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="gfs"/>
+			<property name="com.jaspersoft.studio.field.label" value="gfs"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="gfscode" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="gfscode"/>
+			<property name="com.jaspersoft.studio.field.label" value="gfscode"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="gfs_codes"/>
+		</field>
+		<field name="budget" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="budget"/>
+			<property name="com.jaspersoft.studio.field.label" value="budget"/>
+		</field>
+		<field name="carryover" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="carryover"/>
+			<property name="com.jaspersoft.studio.field.label" value="carryover"/>
+		</field>
+		<field name="current" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="current"/>
+			<property name="com.jaspersoft.studio.field.label" value="current"/>
+		</field>
+		<field name="expenditure" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="expenditure"/>
+			<property name="com.jaspersoft.studio.field.label" value="expenditure"/>
+		</field>
+		<field name="fund_balance" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="fund_balance"/>
+			<property name="com.jaspersoft.studio.field.label" value="fund_balance"/>
+		</field>
+	</subDataset>
+	<queryString language="SQL">
+		<![CDATA[select 1]]>
+	</queryString>
+	<field name="?column?" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="?column?"/>
+		<property name="com.jaspersoft.studio.field.label" value="?column?"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="223" splitType="Stretch">
+			<componentElement>
+				<reportElement x="0" y="23" width="800" height="60" uuid="5044af2e-2846-4af7-9e7c-7a6a8a9b9295">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="fund" uuid="3d8b08c2-259a-468e-aaef-3daecccc1f31">
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="60" uuid="ff6f252e-7b11-4752-acc7-f7a0ab54f431">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="60" height="30" uuid="795a3888-438b-4617-9586-3bfdb9dab230"/>
+								<text><![CDATA[region]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="60" height="30" uuid="d34bede5-7a85-4fee-ba79-9fed47007be2"/>
+								<textFieldExpression><![CDATA[$F{region}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="60" uuid="d7a362c2-28be-4596-be04-607e81d8f033">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="60" height="30" uuid="87f6b838-be05-4fd7-8ccb-f34bee4bad51"/>
+								<text><![CDATA[council]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="60" height="30" uuid="38addf08-0752-4b13-96b4-05a9654f24b8"/>
+								<textFieldExpression><![CDATA[$F{council}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="60" uuid="fb786014-4dac-4cbe-a7e2-6d21117b4b6e">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="60" height="30" uuid="fe18d6fd-8ccb-4374-90a2-4cd201b1ab1f"/>
+								<text><![CDATA[type]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="60" height="30" uuid="8f6a7a5f-e3b1-46d5-a4de-335ef466863e"/>
+								<textFieldExpression><![CDATA[$F{type}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="70" uuid="dd9d4af3-df62-4750-9889-f62ee8f5a6d5">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="70" height="30" uuid="89644429-cc85-46fe-a0f1-4b4fd46144b3"/>
+								<text><![CDATA[facility]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="70" height="30" uuid="c630b656-de61-4f35-93af-896fc949bbac"/>
+								<textFieldExpression><![CDATA[$F{facility}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="ab575a2a-0235-4270-a6af-fdbc8e7c774e">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="0a2904c2-3e5b-4d55-b47c-8242bf2f8032"/>
+								<text><![CDATA[code]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="90" height="30" uuid="8ae7c297-7fa1-4386-88cc-eaf85744592c"/>
+								<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="80" uuid="46883b37-6701-4195-a4c8-6ee400309894">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="80" height="30" uuid="fcf94f0b-b742-4d34-b7b3-b7577e7fd788"/>
+								<text><![CDATA[description]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="80" height="30" uuid="ee838e8b-93f6-4072-9a04-e242423dee88"/>
+								<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="60" uuid="7c30a9a7-6512-4212-89f0-6cf7ac402c83">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="60" height="30" uuid="d42bbd92-0a1b-4077-846f-3d352a9efcea"/>
+								<text><![CDATA[gfs]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="60" height="30" uuid="8b138c37-b48b-4d3c-8533-a6f9f4dff492"/>
+								<textFieldExpression><![CDATA[$F{gfs}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="60" uuid="e553a7b2-1bc5-4540-a83b-98afe83a2e7f">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="60" height="30" uuid="ca6f8367-773a-4ccc-ab5a-3fd9f6ffc103"/>
+								<text><![CDATA[gfscode]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="60" height="30" uuid="1888dd49-8864-41b3-a762-e073c0e93b02"/>
+								<textFieldExpression><![CDATA[$F{gfscode}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="55" uuid="83cb5444-a77c-4ac7-a595-359d9841e5d4">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="55" height="30" uuid="ad1e0e8a-f1d8-4569-8f76-b139261d8e30"/>
+								<text><![CDATA[budget]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="55" height="30" uuid="684f022c-2807-4a0c-bfe6-222e87eb4fff"/>
+								<textFieldExpression><![CDATA[$F{budget}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="40" uuid="4e05f3b3-9baf-4edc-8c75-4f2f3fcadcba">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="40" height="30" uuid="5eb153f0-d2a9-4bf7-b706-365e13800c0e"/>
+								<text><![CDATA[carryover]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="40" height="30" uuid="a6acc9ba-539b-4c6f-897d-68036b627fad"/>
+								<textFieldExpression><![CDATA[$F{carryover}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="45" uuid="f45d12c4-6ba6-4ed0-b914-b932e6591998">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="45" height="30" uuid="ca13502b-c57a-46d0-b138-a28176ff167a"/>
+								<text><![CDATA[current]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="45" height="30" uuid="995637aa-fa75-436a-bfe8-f2332866e94b"/>
+								<textFieldExpression><![CDATA[$F{current}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="55" uuid="d6d0ad92-a16e-484d-a299-52300b82f0a8">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="55" height="30" uuid="d21d9b07-9192-41e7-a56b-c0d91a330acc"/>
+								<text><![CDATA[expenditure]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="55" height="30" uuid="1c7db173-a7dd-4835-b7e5-0df1f731ebfd"/>
+								<textFieldExpression><![CDATA[$F{expenditure}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="60" uuid="81bd349c-3cea-48f9-8795-b3fbaa3f5517">
+						<jr:columnHeader style="Table_CH" height="30">
+							<staticText>
+								<reportElement x="0" y="0" width="60" height="30" uuid="19c5cee6-e0d7-467c-a716-aa68bc4e3fee"/>
+								<text><![CDATA[fund_balance]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="60" height="30" uuid="429efb19-9cb4-429b-9bd5-95a0c5737f87"/>
+								<textFieldExpression><![CDATA[$F{fund_balance}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+</jasperReport>
