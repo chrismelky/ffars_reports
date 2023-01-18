@@ -46,23 +46,9 @@
 		<parameter name="start_date" class="java.sql.Date"/>
 		<parameter name="end_date" class="java.sql.Date"/>
 		<queryString language="SQL">
-			<![CDATA[select 
-    vw.rname as region,
-    vw.cname as council,
-    vw.ftype as facility_type, 
-    vw.name as facility, 
-    fu.description as funding_source,
-    fu.code as funding_source_code,
-    sum(ge.cr_amount - ge.dr_amount) as amount
-from gl_entries ge
-join gl_accounts ga on ge.account = ga.code
-join gl_entry_groups geg on geg.id = ge.gl_entry_group_id
-join facility_ward_view vw on vw.id = ga.facility_id
-join funding_sources as fu on fu.code = ga.fund_code
-where geg.apply_date between $P{start_date} and $P{end_date}  and ga.gl_account_type = 'REVENUE'
-and (vw.rid = $P{location_id} or vw.cid = $P{location_id} or vw.wid=$P{location_id} or 1=$P{location_id})
-group by vw.rname, vw.cname,vw.ftype,vw.name, fu.id
-ORDER by vw.rname, vw.cname,vw.ftype,vw.name, fu.code]]>
+			<![CDATA[SELECT  rname as  region,council,facility_type,facility,funding_source,funding_source_code, sum(amount) as amount from fund_source_revenue where apply_date between $P{start_date} and $P{end_date}  and (rid = $P{location_id} or cid = $P{location_id} or wid=$P{location_id} or 1=$P{location_id}) group by rname,council,facility_type,facility,funding_source,funding_source_code
+ORDER BY region,council,facility_type,facility,funding_source,funding_source_code
+]]>
 		</queryString>
 		<field name="region" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="region"/>
