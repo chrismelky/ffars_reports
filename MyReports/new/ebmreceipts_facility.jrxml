@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.1.final using JasperReports Library version 6.21.0-4f56c4f36cd19e17675219a9ac4692d5f0f13b06  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ebmm receipts facility" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="97e8aa17-6736-4900-a44f-07b8e2a3a719">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="82"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="910"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="529"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="458"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars"/>
+	<parameter name="logo_source" class="java.lang.String">
+		<parameterDescription><![CDATA[National Logo Source]]></parameterDescription>
+	</parameter>
+	<parameter name="facility_id" class="java.lang.Integer">
+		<parameterDescription><![CDATA[Facility ID]]></parameterDescription>
+	</parameter>
+	<parameter name="start_date" class="java.sql.Date">
+		<parameterDescription><![CDATA[Start Date]]></parameterDescription>
+	</parameter>
+	<parameter name="end_date" class="java.sql.Date">
+		<parameterDescription><![CDATA[End Date]]></parameterDescription>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT wv.rname      as region,
+       wv.cname      as council_name,
+       INITCAP( f.name )     as facility_name,
+       f.code        as facility_code,
+       ft.name       as facility_type_name,
+       fs.description       as fundsourcename,
+       fs.code       as fundsourcecode,
+       month,
+       fac.name as accountname,
+       receipt_number,
+       fac.number  as accountnumber,
+       amount
+FROM (
+         SELECT geg.facility_id,
+                ga.fund_code ,
+                ga.gfs_code,
+                to_char(geg.apply_date, 'Mon-YYYY')  as month,
+               r.receipt_number,
+                ca.bank_account_id as facility_account_id,
+                sum(ge.cr_amount - ge.dr_amount)  as amount
+         FROM gl_entries ge
+             join gl_entry_groups geg on geg.id = ge.gl_entry_group_id
+             join gl_accounts ga on ga.code = ge.account
+             join cash_books ca on ca.gl_entry_group_id = geg.id
+            join receipts r on r.id = geg.transaction_id
+
+         where
+         ga.gl_account_type = 'REVENUE' AND geg.transaction_type = 'App\Models\Receipt'
+           AND geg.financial_year_id = 1
+           AND geg.apply_date between $P{start_date}
+           AND $P{end_date}
+           AND ga.fund_code IN ('20J','20K','20F','20Z')
+           AND ge.facility_id = $P{facility_id}
+         GROUP BY r.receipt_number, ga.fund_code, geg.facility_id, ga.gfs_code, to_char(geg.apply_date, 'Mon-YYYY'), r.receipt_number, ca.bank_account_id, ca.bank_account_id
+     ) data
+         JOIN facilities f ON f.id = data.facility_id
+         JOIN bank_accounts fac ON fac.id = data.facility_account_id
+         JOIN facility_ward_view wv ON wv.id = f.id
+         JOIN facility_types ft ON ft.id = f.facility_type_id
+         JOIN funding_sources fs ON fs.code = data.fund_code
+where f.deleted_at is null
+  AND f.facility_type_id IN (8,11)
+order by month;]]>
+	</queryString>
+	<field name="region" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="region"/>
+		<property name="com.jaspersoft.studio.field.label" value="region"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="council_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="council_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="council_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
+	</field>
+	<field name="facility_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facilities"/>
+	</field>
+	<field name="facility_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facilities"/>
+	</field>
+	<field name="facility_type_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="facility_type_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="facility_type_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_types"/>
+	</field>
+	<field name="fundsourcename" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fundsourcename"/>
+		<property name="com.jaspersoft.studio.field.label" value="fundsourcename"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+	</field>
+	<field name="fundsourcecode" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fundsourcecode"/>
+		<property name="com.jaspersoft.studio.field.label" value="fundsourcecode"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
+	</field>
+	<field name="month" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="month"/>
+		<property name="com.jaspersoft.studio.field.label" value="month"/>
+	</field>
+	<field name="accountname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="accountname"/>
+		<property name="com.jaspersoft.studio.field.label" value="accountname"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="bank_accounts"/>
+	</field>
+	<field name="receipt_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="receipt_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="receipt_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="receipts"/>
+	</field>
+	<field name="accountnumber" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="accountnumber"/>
+		<property name="com.jaspersoft.studio.field.label" value="accountnumber"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="bank_accounts"/>
+	</field>
+	<field name="amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="amount"/>
+	</field>
+	<variable name="totalReceipt" class="java.lang.Double" resetType="Group" resetGroup="GrandTotal" calculation="Sum">
+		<variableExpression><![CDATA[$F{amount}]]></variableExpression>
+		<initialValueExpression><![CDATA[0.00]]></initialValueExpression>
+	</variable>
+	<group name="GrandTotal">
+		<groupHeader>
+			<band/>
+		</groupHeader>
+		<groupFooter>
+			<band height="16">
+				<textField textAdjust="StretchHeight" pattern="#,##0.00">
+					<reportElement stretchType="RelativeToTallestObject" x="710" y="0" width="90" height="15" uuid="3087752b-45df-4c6b-ace3-013a7b1699c1">
+						<property name="com.jaspersoft.studio.unit.y" value="px"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<box rightPadding="5">
+						<pen lineWidth="1.0" lineStyle="Solid"/>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font fontName="Roboto" size="8" isBold="true"/>
+						<paragraph lineSpacing="AtLeast" leftIndent="0" rightIndent="5"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{totalReceipt}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="570" y="0" width="140" height="15" uuid="ff3cf815-78cf-40f7-be18-2076e7836e4c">
+						<property name="com.jaspersoft.studio.unit.y" value="px"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<box leftPadding="5" rightPadding="10">
+						<pen lineWidth="1.0" lineStyle="Solid"/>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement textAlignment="Right">
+						<font fontName="Roboto" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total:]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="142" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="83" width="800" height="17" uuid="3803f193-2bfc-4537-b435-447510681cba">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<box rightPadding="3"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{council_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="-1" y="103" width="800" height="17" uuid="6b82c4e3-9630-4e33-b016-29a64c09bb6d">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<box rightPadding="3"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facility_name} + " " + $F{facility_type_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="125" width="800" height="17" uuid="8f7910a6-5fbc-4611-a9a6-82d5e785a417">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<box rightPadding="3"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ EBM Monthly Report]]></text>
+			</staticText>
+			<image hAlign="Center" onErrorType="Blank">
+				<reportElement x="358" y="-19" width="86" height="75" uuid="6a7ebff8-4999-4210-981b-befe700af2c9"/>
+				<imageExpression><![CDATA["repo:/Images/logo"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="316" y="58" width="170" height="10" uuid="9605cdb1-0c38-4dbe-a30b-3f1aaa7b15f5"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[United Republic Of Tanzania]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="69" width="249" height="10" uuid="0cde6291-c48a-48af-98b9-978dfac3d854"/>
+				<textElement textAlignment="Center">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="19" splitType="Stretch">
+			<textField pattern="">
+				<reportElement x="0" y="1" width="800" height="18" backcolor="#F2F2F2" uuid="6cbdd0cb-dff9-451d-b67d-4e6fa1c4d44b"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Double"/>
+					<topPen lineWidth="1.0" lineStyle="Double" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Double" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" isBold="true" isUnderline="false"/>
+					<paragraph lineSpacing="Double"/>
+				</textElement>
+				<textFieldExpression><![CDATA["From " + $P{start_date} + "  TO "  + $P{end_date}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="16" splitType="Stretch">
+			<staticText>
+				<reportElement x="280" y="0" width="100" height="16" uuid="28900458-20af-4313-b745-fd98f5230620"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement>
+					<font fontName="Roboto" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Month]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="572" y="0" width="138" height="16" uuid="4d5220a8-7d3e-4eeb-a0b1-26cd60e3e1b7"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement>
+					<font fontName="Roboto" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Acc Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="140" y="0" width="140" height="16" uuid="81a7ecb6-a241-44da-8461-4fdc5b8e4e73"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement>
+					<font fontName="Roboto" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fund Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="710" y="0" width="90" height="16" uuid="5929b5d9-b262-440b-a5e9-0e1873f3a195"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement>
+					<font fontName="Roboto" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="0" width="192" height="16" uuid="e484a355-fc0c-4d19-af29-7df18b9e1468"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement>
+					<font fontName="Roboto" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Acc Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="140" height="16" uuid="fda62ad9-affa-4777-b33a-9319385eac5c"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement>
+					<font fontName="Roboto" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Receipt Number]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="RelativeToTallestObject" x="280" y="0" width="100" height="15" uuid="4390cbb9-085f-4a3e-9f20-29b4413ab6fd"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8"/>
+					<paragraph leftIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{month}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="RelativeToTallestObject" x="572" y="0" width="138" height="15" uuid="b9657f0b-8453-48f7-9201-200d39d434a0"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8"/>
+					<paragraph leftIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{accountnumber}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="RelativeToTallestObject" x="140" y="0" width="140" height="15" uuid="59851f89-7e05-467c-9908-e1029747aba2"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8"/>
+					<paragraph leftIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fundsourcename}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="#,##0.00">
+				<reportElement stretchType="RelativeToTallestObject" x="710" y="0" width="90" height="15" uuid="58364aeb-a6c8-4686-a4d4-f0a53f105e8d"/>
+				<box rightPadding="5">
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8" isBold="true"/>
+					<paragraph lineSpacing="AtLeast" leftIndent="0" rightIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="RelativeToTallestObject" x="380" y="0" width="192" height="15" uuid="c5f3a726-016b-4da4-b2b4-6b0fa4d86d3d"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8"/>
+					<paragraph leftIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{accountname}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="RelativeToTallestObject" x="0" y="0" width="140" height="15" uuid="e0827765-7d83-4818-bbac-1592e63c90fd"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8"/>
+					<paragraph leftIndent="5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{receipt_number}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="9" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="15" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+			<textField>
+				<reportElement x="603" y="0" width="97" height="15" uuid="99341e17-cb6c-4efb-a9d0-3881f2d73641">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="703" y="0" width="97" height="15" uuid="25ebf405-a45f-49c0-b9b6-ac05e330e027"/>
+				<textElement textAlignment="Left">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" of " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="0" y="0" width="129" height="15" uuid="32e6aaec-162b-45a2-aa10-b6e11d127f5c">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="10" splitType="Stretch"/>
+	</summary>
+</jasperReport>
