@@ -1,0 +1,48 @@
+SELECT wv.rname      as region,
+       wv.cname      as council_name,
+       INITCAP( f.name )     as facility_name,
+       f.code        as facility_code,
+       ft.name       as facility_type_name,
+       fs.description       as fundsourcename,
+       fs.code       as fundsourcecode,
+       month,
+       fac.name as accountname,
+       receipt_number,
+       fac.number  as accountnumber,
+       amount
+
+FROM (
+         SELECT geg.facility_id,
+                ga.fund_code ,
+                ga.gfs_code,
+                to_char(geg.apply_date, 'Mon-YYYY')  as month,
+                r.receipt_number,
+                ca.bank_account_id as facility_account_id,
+                sum(ge.cr_amount - ge.dr_amount)  as amount
+         FROM gl_entries ge
+                  join gl_entry_groups geg on geg.id = ge.gl_entry_group_id
+                  join gl_accounts ga on ga.code = ge.account
+                  join cash_books ca on ca.gl_entry_group_id = geg.id
+                  join receipts r on r.id = geg.transaction_id
+                  JOIN facility_ward_view wv ON wv.id = geg.facility_id
+
+         where
+                 ga.gl_account_type = 'REVENUE' AND geg.transaction_type = 'App\Models\Receipt'
+           AND geg.financial_year_id = 1
+           AND geg.apply_date between to_date('01-07-2022'
+             , 'DD/MM/YYYY')
+             AND to_date('01-06-2023'
+                 , 'DD/MM/YYYY')
+           AND ga.fund_code IN ('20J','20K','20F')
+            AND wv.rid = 394
+          ---AND (wv.cid  = $P{location_id} or wv.rid = $P{location_id} or  1 = $P{location_id})
+         GROUP BY r.receipt_number, ga.fund_code, geg.facility_id, ga.gfs_code, to_char(geg.apply_date, 'Mon-YYYY'), r.receipt_number, ca.bank_account_id, ca.bank_account_id
+     ) data
+         JOIN facilities f ON f.id = data.facility_id
+         JOIN bank_accounts fac ON fac.id = data.facility_account_id
+         JOIN facility_ward_view wv ON wv.id = f.id
+         JOIN facility_types ft ON ft.id = f.facility_type_id
+         JOIN funding_sources fs ON fs.code = data.fund_code
+where f.deleted_at is null
+  AND f.facility_type_id IN (8,11)
+order by month;
