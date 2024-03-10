@@ -56,27 +56,30 @@
     sum(coalesce(al.amount,0)) as allocation,
     0.00 as commitment,
     sum(coalesce(exp.amount,0)) as expendiure
-FROM activity_costings ac
-join gfs_codes g on ac.gfs_code_id = g.id
-left join (
+FROM ( select account,gfs_code_id,financial_year_id,facility_id,
+              sum(amount) as amount from activity_costings
+    where facility_id=19739 and financial_year_id= $P{financial_year_id}
+       group by account,gfs_code_id,financial_year_id,facility_id) ac
+         join gfs_codes g on ac.gfs_code_id = g.id
+         left join (
     select gl_account,
-         sum(amount) as amount
+           sum(amount) as amount
     from fund_allocations
     where facility_id=$P{facility_id} and financial_year_id=$P{financial_year_id}
     group by gl_account
 ) al on al.gl_account = ac.account
-left join(
+         left join(
     select
         ge.account,
         sum(dr_amount - cr_amount) as amount
     from gl_entries ge
-    join gl_accounts as ga on ga.code = ge.account
-    where facility_id=$P{facility_id} and financial_year_id=$P{financial_year_id}
+             join gl_accounts as ga on ga.code = ge.account
+    where ga.facility_id= $P{facility_id} and financial_year_id= $P{financial_year_id}
       and ga.gl_account_type = 'EXPENDITURE'
     group by ge.account
 ) exp on exp.account = ac.account
-where ac.financial_year_id = $P{financial_year_id} and ac.facility_id = $P{facility_id}
-group by ac.account, g.id
+where ac.financial_year_id = $P{financial_year_id}  and ac.facility_id = $P{facility_id}
+group by ac.account, g.id,g.name
 order by g.name]]>
 		</queryString>
 		<field name="account" class="java.lang.String">
