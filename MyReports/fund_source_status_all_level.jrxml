@@ -46,7 +46,9 @@
 		<parameter name="start_date" class="java.sql.Date"/>
 		<parameter name="end_date" class="java.sql.Date"/>
 		<queryString language="SQL">
-			<![CDATA[select 
+			<![CDATA[
+
+			select
     wv.rname as region,
     wv.cname as council,
     ft.name as type, 
@@ -80,7 +82,7 @@ left join (
     f.id as funding_source_id,
     0.00 as budget,
     0.00 as carryover,
-    SUM(case when ga.gl_account_type = 'REVENUE' then (ge.cr_amount -ge.dr_amount) else 0 end) as receipt,
+    SUM(case when ga.gl_account_type = 'REVENUE' then (ge.cr_amount - ge.dr_amount) else 0 end) as receipt,
     SUM(case when ga.gl_account_type = 'EXPENDITURE' then (ge.dr_amount -ge.cr_amount) else 0 end) as expenditure
 from gl_entries ge
     join gl_accounts as ga on ga.code=ge.account
@@ -115,7 +117,10 @@ where  ga.gl_account_type in  ('EXPENDITURE','REVENUE')
 sub on f.id = sub.facility_id 
 join funding_sources fs on fs.id = sub.funding_source_id 
 where (wv.rid = $P{location_id} or wv.cid = $P{location_id} or wv.wid=$P{location_id} or 1=$P{location_id})
-group by wv.rname, wv.cname, ft.name, wv.name, fs.code, fs.description]]>
+group by wv.rname, wv.cname, ft.name, wv.name, fs.code, fs.description
+
+
+]]>
 		</queryString>
 		<field name="region" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="region"/>
