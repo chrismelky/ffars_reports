@@ -45,9 +45,11 @@
     fs.description as fund_source,
     gc.name as gfs,
     gc.code as gfs_code,
-    sum(amount) as amount,
-    sum(coalesce(ex.expenditure,0)) as expenditure
-from activity_costings ac
+    amount,
+    coalesce(ex.expenditure,0.00) as expenditure
+from ( select financial_year_id, facility_id,  funding_source_id, gfs_code_id , sum(amount) as amount from  activity_costings
+ where facility_id=$P{facility_id}  and financial_year_id=$P{financial_year_id}
+group by funding_source_id, gfs_code_id , financial_year_id,facility_id)  ac
      join funding_sources fs on ac.funding_source_id = fs.id
      join gfs_codes gc on ac.gfs_code_id = gc.id
 left join (
@@ -66,8 +68,7 @@ left join (
 ) as ex on
     ac.funding_source_id = ex.funding_source_id
                and ex.gf_code_id = ac.gfs_code_id
-where facility_id=$P{facility_id}  and financial_year_id=$P{financial_year_id}
-group by fs.id,gc.id
+               where ac.facility_id=$P{facility_id}  and ac.financial_year_id=$P{financial_year_id}
 order by fund_code, gfs;]]>
 		</queryString>
 		<field name="fund_code" class="java.lang.String">
@@ -159,21 +160,21 @@ join financial_years fy on fy.id=$P{financial_year_id}
 				<textElement textAlignment="Center">
 					<font size="7" isBold="true"/>
 				</textElement>
-				<text><![CDATA[United Republic Of Tanzania]]></text>
+				<text><![CDATA[The United Republic Of Tanzania]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
 				<textElement textAlignment="Center">
 					<font size="7" isBold="true"/>
 				</textElement>
-				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+				<text><![CDATA[President's Office Regional Administration and Local Government]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="260" y="120" width="283" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="9" isBold="true"/>
 				</textElement>
-				<text><![CDATA[Budget Execution Report]]></text>
+				<text><![CDATA[Facility Budget Performance Report by GFS]]></text>
 			</staticText>
 			<textField textAdjust="StretchHeight">
 				<reportElement x="0" y="120" width="254" height="19" uuid="1db595bc-dd6f-4b83-bc0e-1c182b083619">
