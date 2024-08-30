@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
+<!-- Created with Jaspersoft Studio version 6.20.5.final using JasperReports Library version 6.20.5-3efcf2e67f959db3888d79f73dde2dbd7acb4f8e  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="facility_month_expenditure" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="61f39e6f-a685-4c8b-a416-c9befd3d2c2a">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffars.jrdax"/>
@@ -41,53 +41,65 @@
 		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="1000"/>
 		<parameter name="facility_id" class="java.lang.Long"/>
 		<parameter name="financial_year_id" class="java.lang.Long"/>
-		<parameter name="month" class="java.util.Date"/>
+		<parameter name="month_date" class="java.util.Date"/>
 		<queryString language="SQL">
-			<![CDATA[select
+			<![CDATA[
+			SELECT fund,gfs_code,gfs_description,previousMonths,
+       currentMonth,sum(budget) as budget,sum(previous2Amount) as previous2Amount,sum(currentAmount) as currentAmount
+from (
+			select
     case when fs.code in ('80E','10A', '10B', '10E', '80D','80A','30C', '80C') then 'Own Source' else 'Grant' end as fund,
     gc.code as gfs_code,
     gc.name as gfs_description,
-    TO_CHAR($P{month}::DATE, 'Month') as currentMonth,
-    'July' || '-' || to_char((DATE_TRUNC('MONTH', ($P{month})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE, 'Month') as previousMonths ,
-    sum(ac.amount) as budget,
-    sum(coalesce(lc.previous2Amount,0)) as previous2Amount,
-    sum(coalesce(mc.currentAmount,0)) as currentAmount
-from activity_costings as ac
+    TO_CHAR($P{month_date}::DATE, 'Month') as currentMonth,
+    CASE
+        WHEN EXTRACT(MONTH FROM ($P{month_date})::DATE) = 7 THEN '-'
+         WHEN EXTRACT(MONTH FROM ($P{month_date})::DATE) = 8 THEN 'July'
+        ELSE
+    'July' || '-' || to_char((DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE, 'Month')
+     END
+     as previousMonths ,
+    ac.amount as budget,
+    coalesce(lc.previous2Amount,0) as previous2Amount,
+    coalesce(mc.currentAmount,0) as currentAmount
+from (
+SELECT gfs_code_id,funding_source_id,sum(amount) AS amount FROM activity_costings
+WHERE facility_id = $P{facility_id}
+AND financial_year_id = $P{financial_year_id}
+GROUP BY gfs_code_id,funding_source_id
+) AS ac
 join gfs_codes gc on ac.gfs_code_id = gc.id
 join funding_sources fs on fs.id = ac.funding_source_id
 left join (
     select
-        gc.id as gfs_id,
+         ga.gfs_code,ga.fund_code,
         sum(ge.dr_amount - ge.cr_amount ) as currentAmount
     from  gl_entry_groups geg
               join gl_entries ge on geg.id = ge.gl_entry_group_id
               join gl_accounts ga on ge.account = ga.code
-              join gfs_codes gc on gc.code = ga.gfs_code
     where ga.gl_account_type =  'EXPENDITURE'
-      and geg.apply_date >=(DATE_TRUNC('MONTH', ($P{month})::DATE) - INTERVAL '0 MONTH')::DATE
-      and geg.apply_date <=(DATE_TRUNC('MONTH', ($P{month})::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
+      and geg.apply_date >=(DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH')::DATE
+      and geg.apply_date <=(DATE_TRUNC('MONTH', ($P{month_date})::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
       and geg.facility_id = $P{facility_id}
-    group by  gc.id
-) as mc on mc.gfs_id = gc.id
+    group by   ga.gfs_code,ga.fund_code
+) as mc on mc.gfs_code = gc.code and mc.fund_code = fs.code
 left join (
     select
-        gc.id as gfs_id,
+         ga.gfs_code,ga.fund_code,
         sum(ge.dr_amount- ge.cr_amount ) as previous2Amount
     from  gl_entry_groups geg
               join gl_entries ge on geg.id = ge.gl_entry_group_id
               join gl_accounts ga on ge.account = ga.code
-              join gfs_codes gc on gc.code = ga.gfs_code
     where ga.gl_account_type =  'EXPENDITURE'
-      and geg.apply_date <= (DATE_TRUNC('MONTH', ($P{month})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE
-      and geg.apply_date >= (select start_date from financial_years where id = $P{financial_year_id})
+      and geg.apply_date <= (DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE
+      and geg.financial_year_id = $P{financial_year_id}
       and geg.facility_id = $P{facility_id}
-    group by  gc.id
-) as lc on lc.gfs_id = gc.id
-where ac.financial_year_id= $P{financial_year_id}
-  and ac.facility_id = $P{facility_id}
-  and substr(ac.account, 58,1)  not in ('6', '7')
-group by fs.id, gc.id
-order by fund desc;]]>
+    group by  ga.gfs_code,ga.fund_code
+) as lc on lc.gfs_code = gc.code AND lc.fund_code = fs.code
+
+)sub
+group by fund, gfs_code, gfs_description, previousMonths, currentMonth
+order by fund desc, gfs_code asc;]]>
 		</queryString>
 		<field name="fund" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="fund"/>
@@ -147,15 +159,15 @@ order by fund desc;]]>
 	</subDataset>
 	<parameter name="facility_id" class="java.lang.Long"/>
 	<parameter name="financial_year_id" class="java.lang.Long"/>
-	<parameter name="month" class="java.sql.Date"/>
+	<parameter name="month_date" class="java.sql.Date"/>
 	<queryString language="SQL">
-		<![CDATA[select
-name as facility,
-ftype as type,
-cname as council,
-(select name from financial_years where id =$P{financial_year_id}) as year,
-TO_CHAR($P{month}::date, 'Month') as month
-from facility_ward_view where id=$P{facility_id};]]>
+		<![CDATA[SELECT
+name AS facility,
+ftype AS type,
+cname AS council,
+(SELECT name FROM financial_years WHERE id =$P{financial_year_id}) AS year,
+TO_CHAR($P{month_date}::date, 'Month') AS month
+FROM facility_ward_view where id=$P{facility_id};]]>
 	</queryString>
 	<field name="facility" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="facility"/>
@@ -194,14 +206,14 @@ from facility_ward_view where id=$P{facility_id};]]>
 				<textElement textAlignment="Center">
 					<font size="7" isBold="true"/>
 				</textElement>
-				<text><![CDATA[United Republic Of Tanzania]]></text>
+				<text><![CDATA[The United Republic Of Tanzania]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="277" y="93" width="249" height="10" uuid="52a3d117-41e3-44a9-813d-75877e89a183"/>
 				<textElement textAlignment="Center">
 					<font size="7" isBold="true"/>
 				</textElement>
-				<text><![CDATA[President Office Reginal Administration and Local Goverment]]></text>
+				<text><![CDATA[President's Office Regional Administration and Local Government]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="260" y="119" width="283" height="19" uuid="6f0b6821-2bd9-4bad-b826-28e3d4a8f9e4"/>
@@ -221,14 +233,14 @@ from facility_ward_view where id=$P{facility_id};]]>
 				<textFieldExpression><![CDATA[$F{facility}+ " " +$F{type}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight">
-				<reportElement x="653" y="119" width="144" height="19" uuid="f35f7cc6-1add-4305-aa72-9407d2d2e338">
+				<reportElement x="580" y="119" width="217" height="19" uuid="f35f7cc6-1add-4305-aa72-9407d2d2e338">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<box padding="4"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font fontName="SansSerif" size="9" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{month}+ "-" + $F{year}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{month} + "-" +  $F{year}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight">
 				<reportElement x="277" y="103" width="254" height="19" uuid="7517af8e-8409-441b-aecc-9221d89e34bb">
@@ -261,8 +273,8 @@ from facility_ward_view where id=$P{facility_id};]]>
 						<datasetParameter name="financial_year_id">
 							<datasetParameterExpression><![CDATA[$P{financial_year_id}]]></datasetParameterExpression>
 						</datasetParameter>
-						<datasetParameter name="month">
-							<datasetParameterExpression><![CDATA[$P{month}]]></datasetParameterExpression>
+						<datasetParameter name="month_date">
+							<datasetParameterExpression><![CDATA[$P{month_date}]]></datasetParameterExpression>
 						</datasetParameter>
 						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					</datasetRun>
