@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.5.final using JasperReports Library version 6.20.5-3efcf2e67f959db3888d79f73dde2dbd7acb4f8e  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="facility_activity_implementation" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dbfc63cd-2e4f-4449-8176-fb07218a00de">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="128"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="865"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffarsvie"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="600"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="386"/>
+
+	<property name="ireport.jasperserver.url" value="http://localhost:8888/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ffars/facility_general_ledger_files/rxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ffars/facility_general_ledger"/>
+
+
+	<parameter name="facility_id" class="java.lang.Integer"/>
+	<parameter name="location_id" class="java.lang.Integer"/>
+	<parameter name="financial_year_id" class="java.lang.Integer"/>
+	<parameter name="end_date" class="java.lang.String"/>
+	<parameter name="start_date" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT type, facility_name,facility_code,council,council_id,code,description,budget,expenditure,
+       coalesce(implementation,' ') AS implementation ,coalesce(reason,' ') AS reason, coalesce(constraints,' ') AS constraints,balance,
+       coalesce(allocation,0.0)  AS allocation FROM (
+
+                                                        SELECT wv.ftype as type,f.name as facility_name,f.code AS facility_code,wv.cname AS council,wv.ccode AS council_id,
+                                                               a.code, a.description,coalesce(bg.budget,0.0) AS budget, coalesce(exp.expenditure,0.0) AS expenditure,
+
+                                                               CASE  WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD'))   =  3  THEN  q1_implementation
+                                                                     WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  4   THEN  q2_implementation
+                                                                     WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  1  THEN  q3_implementation
+                                                                     WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  2   THEN  q4_implementation  ELSE ' ' END AS implementation,
+
+                                                               case WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD'))   =  3  THEN  q1_reason
+                                                                    WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  4     THEN  q2_reason
+                                                                    WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  1    THEN  q3_reason
+                                                                    WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  2  THEN "q4_reason character"   ELSE  ' '  END AS  reason ,
+
+                                                               case WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD'))   =  3  THEN  q1_constraints
+                                                                    WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =   4 THEN  q2_constraints
+                                                                    WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  1 THEN q3_constraints
+                                                                    WHEN   EXTRACT(QUARTER FROM  to_date($P{start_date},'YYYY/MM/DD')) =  2  THEN  q4_constraints  ELSE ' ' END AS constraints ,
+
+                                                               budget - expenditure as balance , allocation from activities a
+                                                                                                                     JOIN facilities f ON f.id = a.facility_id
+                                                                                                                     JOIN facility_ward_view wv ON wv.id  = f.id
+
+
+
+                                                                                                                     LEFT JOIN
+
+                                                                                                                 ( Select b.activity_id,sum(b.amount) AS budget ,sum(al.amount) AS allocation FROM (SELECT financial_year_id, ac.facility_id, activity_id,SUM(amount) AS amount
+                                                                                                                                                                                                    FROM activity_costings ac JOIN gl_accounts ga ON ga.id = ac.account_id GROUP BY ac.facility_id, ac.activity_id,ac.financial_year_id
+                                                                                                                                                                                                    ) b
+                                                                                                                                                                                                    LEFT JOIN (SELECT a.id AS activity_id, fal.financial_year_id, SUM(amount) AS amount
+                                                                                                                                                                                                                  FROM fund_allocations fal
+                                                                                                                                                                                                                           JOIN gl_accounts ga ON ga.code = fal.gl_account
+                                                                                                                                                                                                                           JOIN activities a ON a.code = ga.activity_code
+                                                                                                                                                                                                                  WHERE  fal.created_at
+                                                                                                                                                                                                                      BETWEEN to_date($P{start_date},'YYYY/MM/DD')
+                                                                                                                                                                                                                      and  to_date($P{end_date},'YYYY/MM/DD') AND   fal.facility_id =  $P{facility_id} GROUP BY  fal.financial_year_id, a.id
+
+                                                                                                                 ) al ON al.activity_id = b.activity_id AND al.financial_year_id = b.financial_year_id
+                                                                                                                   WHERE b.facility_id =  $P{facility_id}
+                                                                                                                     AND b.financial_year_id  =  $P{financial_year_id}
+                                                                                                                   GROUP BY b.activity_id
+                                                                                                                 )bg
+                                                                                                                 on a.id = bg.activity_id
+
+                                                                                                                     LEFT JOIN
+                                                                                                                 (SELECT  a.id as activity_id, sum(dr_amount - cr_amount) AS expenditure FROM gl_entries  ge
+                                                                                                                                                                                                  JOIN gl_entry_groups geg ON geg.id = ge.gl_entry_group_id
+                                                                                                                                                                                                  JOIN gl_accounts ga  ON ga.code = ge.account AND ga.gl_account_type = 'EXPENDITURE'
+
+                                                                                                                                                                                                  JOIN activities a ON a.code = ga.activity_code
+                                                                                                                  WHERE  geg.financial_year_id = $P{financial_year_id}  AND geg.facility_id = $P{facility_id}
+                                                                                                                    AND geg.apply_date BETWEEN to_date($P{start_date},'YYYY/MM/DD') AND  to_date($P{end_date},'YYYY/MM/DD'
+                                                                                                                      )  GROUP BY activity_id )exp
+                                                                                                                 ON a.id = exp.activity_id WHERE a.facility_id = $P{facility_id} AND a.financial_year_id = $P{financial_year_id}
+                                                    )report]]>
+	</queryString>
+	<field name="type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facility_types"/>
+	</field>
+	<field name="facility_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="facility_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facilities"/>
+	</field>
+	<field name="facility_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="facility_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facilities"/>
+	</field>
+	<field name="council" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="council"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ward_view"/>
+	</field>
+	<field name="council_id" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="council_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ward_view"/>
+	</field>
+	<field name="code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="activities"/>
+	</field>
+	<field name="description" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="description"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="activities"/>
+	</field>
+	<field name="budget" class="java.lang.Double">
+		<property name="com.jaspersoft.studio.field.label" value="budget"/>
+	</field>
+	<field name="expenditure" class="java.lang.Double">
+		<property name="com.jaspersoft.studio.field.label" value="expenditure"/>
+	</field>
+	<field name="implementation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="implementation"/>
+	</field>
+	<field name="reason" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="reason"/>
+	</field>
+	<field name="constraints" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="constraints"/>
+	</field>
+	<field name="balance" class="java.lang.Double">
+		<property name="com.jaspersoft.studio.field.label" value="balance"/>
+	</field>
+	<field name="allocation" class="java.lang.Double">
+		<property name="com.jaspersoft.studio.field.label" value="allocation"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="124" splitType="Stretch">
+			<staticText>
+				<reportElement x="4" y="49" width="793" height="31" uuid="3f44a7f6-5dfb-4900-aae5-8612f940b2b2"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="11" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ THE UNITED REPUBLIC OF TANZANIA
+ PRESIDENT'S OFFICE  REGIONAL ADMINISTRATION AND LOCAL GOVERNMENT]]></text>
+			</staticText>
+
+			<textField>
+				<reportElement x="4" y="84" width="793" height="16" uuid="cb51dcdf-68c9-4a52-942d-1c606d4752f7"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{council}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="4" y="104" width="793" height="20" uuid="b806cbf6-b9b3-40e0-a917-d5af6a55d40b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{facility_name}.concat( "  ").concat( $F{type} )]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="799" height="20" uuid="71fc79d4-c0b9-46e3-ae37-1ddc6d7dc290"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Activity Implementation Report From ".concat( $P{start_date} ).concat(" To ").concat($P{end_date})]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="45" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="45" uuid="29737106-162f-4a87-ae9a-2f714cebecc4">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Activity]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="0" width="80" height="45" uuid="65098efb-36e2-4543-a339-85a499602087">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Budget]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="660" y="0" width="70" height="45" uuid="fff53a18-76cf-493b-ac9b-4a83fa23a65e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Funds spent]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="730" y="0" width="67" height="45" uuid="f71ef18b-a801-4e83-b779-0284150bd949">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Balance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="270" y="0" width="110" height="45" uuid="b91d12a7-bc04-4956-82c8-35d2f5a18bf9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Reasons for not implementing / completing]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="0" width="120" height="45" uuid="7f8eff99-043a-41ba-92a6-a36153a29154">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Constraints]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="120" height="45" uuid="4d371d21-1684-4f3d-b441-37979f0143ed">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Implementation status/achievements (targets/indicators)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="580" y="0" width="80" height="45" uuid="2e5af136-e922-4326-ba9e-085c21563286">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Funds allocated]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="60" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="150" height="60" uuid="57e66bef-0a67-4a44-b9b1-353b11ab1b8f">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{code}  + " - "  +  $F{description}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="500" y="0" width="80" height="60" uuid="d5fd1913-df0d-4129-90fb-2e97f3b2ddeb">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{budget}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="660" y="0" width="70" height="60" uuid="9b3b1b80-a4df-4640-8188-903b4b9cb5af">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{expenditure}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="730" y="0" width="67" height="60" uuid="e8ec6ce9-e54d-4ad8-97cf-e7c26ad90613">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{budget} -$F{expenditure}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="150" y="0" width="120" height="60" uuid="a6dc6e12-0869-4784-95a9-af0513994ec2">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{implementation}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="270" y="0" width="110" height="60" uuid="828ca9af-a9db-4ed3-9c13-7f0f85edf3ac">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{reason}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="380" y="0" width="120" height="60" uuid="f7b32e26-2f82-4bb7-a9d7-3d091e20a7bd">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{constraints}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="580" y="0" width="80" height="60" uuid="a8df0e70-c8fe-42fe-a955-74a31f48c633">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box topPadding="5" leftPadding="0" rightPadding="5">
+					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{allocation}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="38" splitType="Stretch">
+			<textField>
+				<reportElement x="580" y="4" width="112" height="30" uuid="38d7db1a-2150-47a2-92af-5cc9859d2f65"/>
+				<textElement textAlignment="Right">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="695" y="4" width="102" height="30" uuid="e95066dd-96fc-4e89-b28d-305564f45fc4"/>
+				<textElement textAlignment="Left">
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" of " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="1" y="8" width="100" height="30" uuid="629b19f7-06ab-447f-b9e3-ec1b5e27611d"/>
+				<textElement>
+					<font fontName="Roboto" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="123" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="31" width="800" height="1" uuid="9b4574e3-9f31-4dea-baea-368e86ae3224"/>
+			</line>
+			<line>
+				<reportElement x="1" y="120" width="799" height="2" uuid="5cb2c244-c077-4ae3-aa66-57d0fc959d31"/>
+			</line>
+			<line>
+				<reportElement x="1" y="31" width="1" height="91" uuid="72056f19-8c42-40a6-b829-d56edf01737a"/>
+			</line>
+			<line>
+				<reportElement x="799" y="30" width="1" height="93" uuid="583e2cb3-7974-47dd-bc84-2f3cda6d5f80"/>
+			</line>
+			<line>
+				<reportElement x="2" y="52" width="797" height="1" uuid="2a0c6005-39c3-49bf-b898-e42b9a5de46c"/>
+			</line>
+			<line>
+				<reportElement x="2" y="76" width="797" height="1" uuid="4a76a883-58ed-4664-928a-63bf15248c3b"/>
+			</line>
+			<line>
+				<reportElement x="2" y="99" width="797" height="1" uuid="20644e7b-cefa-4c92-bc33-aac963c63ad1"/>
+			</line>
+			<line>
+				<reportElement x="99" y="30" width="1" height="92" uuid="3502bc5a-bcf3-406c-bf52-d2781833de44"/>
+			</line>
+			<line>
+				<reportElement x="260" y="29" width="1" height="93" uuid="3321fe62-cd1d-4d3b-a3e6-51ba6914228e"/>
+			</line>
+			<line>
+				<reportElement x="440" y="30" width="1" height="90" uuid="1355f485-76c3-4e26-a047-20520fe81d8b"/>
+			</line>
+			<line>
+				<reportElement x="620" y="29" width="1" height="91" uuid="4720eda4-c7cf-4fec-bc62-263472097b98"/>
+			</line>
+			<staticText>
+				<reportElement x="110" y="31" width="140" height="19" uuid="d5d50b3c-082f-4b01-b9a9-996d7f599f4e"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="265" y="32" width="165" height="19" uuid="978baf01-1726-4d52-b3f8-fa3f2b401d9f"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Title]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="32" width="165" height="19" uuid="c1d831d6-0720-4d7a-a217-b00e972bc808"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="625" y="32" width="165" height="19" uuid="c9b13789-ea98-42e7-8920-16eb1613121e"/>
+				<textElement textAlignment="Center">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2" y="74" width="97" height="23" uuid="19ff6faa-909c-49dd-bb6d-925cd107f159"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Checked By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="53" width="97" height="23" uuid="7d233da6-fc99-4180-8d48-d26ed87aaee8"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Prepared By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="4" y="100" width="94" height="23" uuid="a2e9573a-92db-4c54-98ca-126b1bd46063"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Roboto" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Received By]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>
