@@ -49,25 +49,26 @@
 		<parameter name="facility_id" class="java.lang.Long"/>
 		<parameter name="financial_year_id" class="java.lang.Long"/>
 		<queryString language="SQL">
-			<![CDATA[select
+			<![CDATA[SELECT
     ac.account,
     g.name as description,
-   ac.amount as budget,
-   coalesce(al.amount,0) as allocation,
-    0.00 as commitment,
+    ac.amount as budget,
+    coalesce(al.amount,0) as allocation,
+    coalesce(vouch.amount,0) - coalesce(exp.amount,0)  as commitment,
     coalesce(exp.amount,0) as expendiure
 FROM ( select account,gfs_code_id,financial_year_id,facility_id,
               sum(amount) as amount from activity_costings
-       where facility_id = $P{facility_id} and financial_year_id = $P{financial_year_id}
+      where facility_id = $P{facility_id} and financial_year_id = $P{financial_year_id}
+       --where facility_id = 42744 and financial_year_id =1
        group by account,gfs_code_id,financial_year_id,facility_id
 
-    ) ac
+     ) ac
          join gfs_codes g on ac.gfs_code_id = g.id
          left join (
     select gl_account,
            sum(amount) as amount
     from fund_allocations
-    where facility_id=$P{facility_id} and financial_year_id=$P{financial_year_id}
+   where facility_id=$P{facility_id} and financial_year_id=$P{financial_year_id}
     group by gl_account
 ) al on al.gl_account = ac.account
          left join(
@@ -76,12 +77,25 @@ FROM ( select account,gfs_code_id,financial_year_id,facility_id,
         sum(dr_amount - cr_amount) as amount
     from gl_entries ge
              join gl_accounts as ga on ga.code = ge.account
-    where ga.facility_id= $P{facility_id} and financial_year_id= $P{financial_year_id}
+    where ga.facility_id = $P{facility_id} and financial_year_id= $P{financial_year_id}
       and ga.gl_account_type = 'EXPENDITURE'
     group by ge.account
-) exp on exp.account = ac.account
-where ac.financial_year_id = $P{financial_year_id}  and ac.facility_id = $P{facility_id}
-order by g.name]]>
+)
+    exp on exp.account = ac.account
+
+LEFT JOIN(
+    select
+        p.gl_account as account,
+        sum(p.amount) as amount
+    from payables  p
+             join vouchers as v on v.id = p.voucher_id
+    where v.facility_id =  $P{facility_id} and v.financial_year_id= $P{financial_year_id} and v.deleted_at is null
+    --where v.facility_id = 42744 and v.financial_year_id= 1 and v.deleted_at is null
+    group by p.gl_account
+
+) vouch on vouch.account = ac.account
+order by g.name;
+]]>
 		</queryString>
 		<field name="account" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="account"/>

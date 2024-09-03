@@ -43,62 +43,64 @@
 		<parameter name="financial_year_id" class="java.lang.Long"/>
 		<parameter name="month_date" class="java.util.Date"/>
 		<queryString language="SQL">
-			<![CDATA[
-			SELECT fund,gfs_code,gfs_description,previousMonths,
+			<![CDATA[SELECT fund,gfs_code,gfs_description,previousMonths,budget_type,
        currentMonth,sum(budget) as budget,sum(previous2Amount) as previous2Amount,sum(currentAmount) as currentAmount
 from (
-			select
-    case when fs.code in ('80E','10A', '10B', '10E', '80D','80A','30C', '80C') then 'Own Source' else 'Grant' end as fund,
-    gc.code as gfs_code,
-    gc.name as gfs_description,
-    TO_CHAR($P{month_date}::DATE, 'Month') as currentMonth,
-    CASE
-        WHEN EXTRACT(MONTH FROM ($P{month_date})::DATE) = 7 THEN '-'
-         WHEN EXTRACT(MONTH FROM ($P{month_date})::DATE) = 8 THEN 'July'
-        ELSE
-    'July' || '-' || to_char((DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE, 'Month')
-     END
-     as previousMonths ,
-    ac.amount as budget,
-    coalesce(lc.previous2Amount,0) as previous2Amount,
-    coalesce(mc.currentAmount,0) as currentAmount
-from (
-SELECT gfs_code_id,funding_source_id,sum(amount) AS amount FROM activity_costings
-WHERE facility_id = $P{facility_id}
-AND financial_year_id = $P{financial_year_id}
-GROUP BY gfs_code_id,funding_source_id
-) AS ac
-join gfs_codes gc on ac.gfs_code_id = gc.id
-join funding_sources fs on fs.id = ac.funding_source_id
-left join (
-    select
-         ga.gfs_code,ga.fund_code,
-        sum(ge.dr_amount - ge.cr_amount ) as currentAmount
-    from  gl_entry_groups geg
-              join gl_entries ge on geg.id = ge.gl_entry_group_id
-              join gl_accounts ga on ge.account = ga.code
-    where ga.gl_account_type =  'EXPENDITURE'
-      and geg.apply_date >=(DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH')::DATE
-      and geg.apply_date <=(DATE_TRUNC('MONTH', ($P{month_date})::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
-      and geg.facility_id = $P{facility_id}
-    group by   ga.gfs_code,ga.fund_code
-) as mc on mc.gfs_code = gc.code and mc.fund_code = fs.code
-left join (
-    select
-         ga.gfs_code,ga.fund_code,
-        sum(ge.dr_amount- ge.cr_amount ) as previous2Amount
-    from  gl_entry_groups geg
-              join gl_entries ge on geg.id = ge.gl_entry_group_id
-              join gl_accounts ga on ge.account = ga.code
-    where ga.gl_account_type =  'EXPENDITURE'
-      and geg.apply_date <= (DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE
-      and geg.financial_year_id = $P{financial_year_id}
-      and geg.facility_id = $P{facility_id}
-    group by  ga.gfs_code,ga.fund_code
-) as lc on lc.gfs_code = gc.code AND lc.fund_code = fs.code
-
-)sub
-group by fund, gfs_code, gfs_description, previousMonths, currentMonth
+         select
+             case when fs.code in ('80E','10A', '10B', '10E', '80D','80A','30C', '80C') then 'Own Source' else 'Grant' end as fund,
+             case when ac.fund_type_code in ('1','6') then 'recurrent' else 'development'
+                 END AS budget_type,
+                gc.code as gfs_code,
+             gc.name as gfs_description,
+             TO_CHAR($P{month_date}::DATE, 'Month') as currentMonth,
+             CASE
+                 WHEN EXTRACT(MONTH FROM ($P{month_date})::DATE) = 7 THEN '-'
+                 WHEN EXTRACT(MONTH FROM ($P{month_date})::DATE) = 8 THEN 'July'
+                 ELSE
+                             'July' || '-' || to_char((DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE, 'Month')
+                 END
+                                                                                                                           as previousMonths ,
+             ac.amount as budget,
+             coalesce(lc.previous2Amount,0) as previous2Amount,
+             coalesce(mc.currentAmount,0) as currentAmount
+         from (
+                  SELECT gfs_code_id,funding_source_id,fund_type_code,sum(amount) AS amount FROM activity_costings
+                  WHERE facility_id = $P{facility_id}
+                   AND financial_year_id = $P{financial_year_id}
+                  GROUP BY gfs_code_id,funding_source_id,fund_type_code
+              ) AS ac
+                  join gfs_codes gc on ac.gfs_code_id = gc.id
+                  join funding_sources fs on fs.id = ac.funding_source_id
+                  left join (
+             select
+                 ga.gfs_code,ga.fund_code,ga.fund_type_code,
+                 sum(ge.dr_amount - ge.cr_amount ) as currentAmount
+             from  gl_entry_groups geg
+                       join gl_entries ge on geg.id = ge.gl_entry_group_id
+                       join gl_accounts ga on ge.account = ga.code
+             where ga.gl_account_type =  'EXPENDITURE'
+               and geg.apply_date >=(DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH')::DATE
+               and geg.apply_date <=(DATE_TRUNC('MONTH', ($P{month_date})::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
+               and geg.facility_id = $P{facility_id}
+             group by   ga.gfs_code,ga.fund_code,ga.fund_type_code
+         ) as mc on mc.gfs_code = gc.code and mc.fund_code = fs.code
+             and mc.fund_type_code = ac.fund_type_code
+                  left join (
+             select
+                 ga.gfs_code,ga.fund_code,ga.fund_type_code,
+                 sum(ge.dr_amount- ge.cr_amount ) as previous2Amount
+             from  gl_entry_groups geg
+                       join gl_entries ge on geg.id = ge.gl_entry_group_id
+                       join gl_accounts ga on ge.account = ga.code
+             where ga.gl_account_type =  'EXPENDITURE'
+               and geg.apply_date <= (DATE_TRUNC('MONTH', ($P{month_date})::DATE) - INTERVAL '0 MONTH + 1 day')::DATE
+               and geg.financial_year_id = $P{financial_year_id}
+               and geg.facility_id = $P{facility_id}
+             group by  ga.gfs_code,ga.fund_code,ga.fund_type_code
+         ) as lc on lc.gfs_code = gc.code AND lc.fund_code = fs.code
+             and lc.fund_type_code = ac.fund_type_code
+     )sub
+group by fund, gfs_code, gfs_description,budget_type, previousMonths, currentMonth
 order by fund desc, gfs_code asc;]]>
 		</queryString>
 		<field name="fund" class="java.lang.String">
