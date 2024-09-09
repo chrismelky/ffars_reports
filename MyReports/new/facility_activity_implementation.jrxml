@@ -51,7 +51,8 @@
                                                                                                                      LEFT JOIN
 
                                                                                                                  ( Select b.activity_id,sum(b.amount) AS budget ,sum(al.amount) AS allocation FROM (SELECT financial_year_id, ac.facility_id, activity_id,SUM(amount) AS amount
-                                                                                                                                                                                                    FROM activity_costings ac JOIN gl_accounts ga ON ga.id = ac.account_id GROUP BY ac.facility_id, ac.activity_id,ac.financial_year_id
+                                                                                                                                                                                                    FROM activity_costings ac JOIN gl_accounts ga ON ga.id = ac.account_id
+                                                                                                                                                                                                    GROUP BY ac.facility_id, ac.activity_id,ac.financial_year_id
                                                                                                                                                                                                     ) b
                                                                                                                                                                                                     LEFT JOIN (SELECT a.id AS activity_id, fal.financial_year_id, SUM(amount) AS amount
                                                                                                                                                                                                                   FROM fund_allocations fal

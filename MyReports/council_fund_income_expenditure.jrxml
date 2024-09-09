@@ -47,47 +47,49 @@
 		<parameter name="financial_year_id" class="java.lang.Integer"/>
 		<parameter name="Parameter1" class="java.lang.String"/>
 		<queryString language="SQL">
-			<![CDATA[SELECT ft.name AS type, wv.code as fcode,wv.name AS facility,fs.code,fs.description,sum(budget) as budget, sum(carryover) as carryover,
- sum(current) as current,sum(expenditure) as expenditure,sum(carryover + current - expenditure) as fund_balance from facility_ward_view  wv
- JOIN facilities f ON f.id = wv.id
- JOIN facility_types ft ON ft.id = f.facility_type_id
- LEFT JOIN (SELECT fr.facility_id,gl.gfs_code,funding_source_id,0.00
-  as budget,sum(amount) as carryover,0.00      as current,0.00
-   as expenditure from fund_trackings fr
-   join gl_accounts gl on gl.code  = fr.gl_account
-    where fr.date <  $P{start_date} 
+			<![CDATA[SELECT wv.ftype AS type, wv.code as fcode,wv.name AS facility,fs.code,fs.description,0 as budget, sum(carryover) as carryover,
+       sum(current) as current,sum(expenditure) as expenditure,sum(carryover + current) as totalfund, sum(carryover + current - expenditure) as fund_balance from facility_ward_view  wv
+                                                                                                                                                                      JOIN facilities f ON f.id = wv.id
+                                                                                                                                                                      LEFT JOIN
+                                                                                                                                                                  (SELECT fr.facility_id,fr.funding_source_id,sum(amount) as carryover,0.00      as current,0.00
+                                                                                                                                                                                                                          as expenditure from fund_trackings fr
+                                                                                                                                                                                                                                                  join facility_ward_view wv on wv.id = fr.facility_id
+                                                                                                                                                                                                                                                  join facility_types ft on ft.id = wv.facility_type_id
+                                                                                                                                                                                                                                                  join gl_accounts gl on gl.code  = fr.gl_account
+                                                                                                                                                                   where fr.date <  $P{start_date} and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
+                                                                                                                                                                     and (ft.sector_id = $P{sector_id} or $P{sector_id} is null)
+                                                                                                                                                                     and (gl.gl_account_type = 'REVENUE' or gl.gl_account_type = 'EXPENDITURE' or gl.gl_account_type = 'OPENING_BALANCE')
+                                                                                                                                                                   group by fr.funding_source_id, fr.facility_id
 
-    group by fr.funding_source_id, fr.facility_id,gfs_code
-     UNION ALL select fr.facility_id,gl.gfs_code,funding_source_id,0.00
-      as budget,0.00        as carryover,sum(amount) as current,0.00
-      as expenditure from fund_trackings fr
-                    join gl_accounts gl on gl.code  = fr.gl_account
-                    where fr.date between $P{start_date}  and $P{end_date}
-                    and fr.transaction_type !=  'App\Models\Payable'
-                    group by fr.funding_source_id,
-                     fr.facility_id,gl.gfs_code
-                     union all select fr.facility_id,gl.gfs_code,
-                     funding_source_id,0.00
-                      as budget,0.00             as carryover,0.00
-                         as current,sum(-1 * amount) as expenditure
-                         from fund_trackings fr join gl_accounts
-                         gl on gl.code  = fr.gl_account where fr.date
-    between  $P{start_date}  and  $P{end_date} and fr.transaction_type = 'App\Models\Payable'
-     group by fr.funding_source_id, fr.facility_id,gfs_code
-     union all select ac.facility_id,gc.code as gfs_code,funding_source_id,
-     sum(amount) as budget,0.00        as carryover,0.00  as current,0.00
-       as expenditure from activity_costings ac join gfs_codes gc on ac.gfs_code_id = gc.id
-       where ac.financial_year_id = $P{financial_year_id} group by ac.funding_source_id, ac.facility_id,gc.code)sub
-       on wv.id = sub.facility_id  and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
-       join gfs_codes gfs on gfs.code = sub.gfs_code
-       join funding_sources fs on fs.id = sub.funding_source_id
-       group by wv.rname, wv.cname, ft.name, wv.name, fs.code, fs.description,wv.code
-
-
-
-
-
-
+                                                                                                                                                                   UNION ALL
+                                                                                                                                                                   select fr.facility_id,funding_source_id,0.00 as carryover,sum(amount) as current,0.00
+                                                                                                                                                                       as expenditure from fund_trackings fr
+                                                                                                                                                                       join gl_accounts gl on gl.code  = fr.gl_account
+                                                                                                                                                                       join facility_ward_view wv on  wv.id = fr.facility_id
+                                                                                                                                                                       join facility_types ft on ft.id = wv.facility_type_id
+                                                                                                                                                                   where fr.date between $P{start_date}  and $P{end_date}
+                                                                                                                                                                     and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
+                                                                                                                                                                     and (ft.sector_id = $P{sector_id} or $P{sector_id} is null)
+                                                                                                                                                                     and gl.gl_account_type = 'REVENUE'
+                                                                                                                                                                   group by fr.funding_source_id,
+                                                                                                                                                                       fr.facility_id
+                                                                                                                                                                   union all
+                                                                                                                                                                   select fr.facility_id,
+                                                                                                                                                                       funding_source_id,0.00             as carryover,0.00
+                                                                                                                                                                       as current,-1 * sum(amount) as expenditure
+                                                                                                                                                                   from fund_trackings fr
+                                                                                                                                                                       join gl_accounts gl on gl.code  = fr.gl_account
+                                                                                                                                                                       join facility_ward_view wv on wv.id = fr.facility_id
+                                                                                                                                                                       join facility_types ft on ft.id = wv.facility_type_id
+                                                                                                                                                                   where fr.date between  $P{start_date}  and  $P{end_date}
+                                                                                                                                                                     and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
+                                                                                                                                                                  and (ft.sector_id = $P{sector_id} or $P{sector_id} is null)
+                                                                                                                                                                   and gl.gl_account_type = 'EXPENDITURE'
+                                                                                                                                                                   group by fr.funding_source_id, fr.facility_id
+                                                                                                                                                                  )sub
+                                                                                                                                                                  on wv.id = sub.facility_id  and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
+                                                                                                                                                                      join funding_sources fs on fs.id = sub.funding_source_id
+group by wv.rname, wv.cname,wv.ftype, wv.name, fs.code, fs.description,wv.code
 
 ]]>
 		</queryString>
