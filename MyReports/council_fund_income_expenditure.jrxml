@@ -38,14 +38,17 @@
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="255"/>
 		<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="738"/>
-		<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="966"/>
-		<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="24"/>
+		<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="617"/>
+		<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="373"/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ffarsvie"/>
 		<parameter name="location_id" class="java.lang.Long"/>
 		<parameter name="end_date" class="java.sql.Date"/>
 		<parameter name="start_date" class="java.sql.Date"/>
 		<parameter name="financial_year_id" class="java.lang.Integer"/>
-		<parameter name="Parameter1" class="java.lang.String"/>
+		<parameter name="sector_id" class="java.lang.Integer">
+			<parameterDescription><![CDATA[sector id]]></parameterDescription>
+			<defaultValueExpression><![CDATA[10]]></defaultValueExpression>
+		</parameter>
 		<queryString language="SQL">
 			<![CDATA[SELECT wv.ftype AS type, wv.code as fcode,wv.name AS facility,fs.code,fs.description,0 as budget, sum(carryover) as carryover,
        sum(current) as current,sum(expenditure) as expenditure,sum(carryover + current) as totalfund, sum(carryover + current - expenditure) as fund_balance from facility_ward_view  wv
@@ -57,7 +60,7 @@
                                                                                                                                                                                                                                                   join facility_types ft on ft.id = wv.facility_type_id
                                                                                                                                                                                                                                                   join gl_accounts gl on gl.code  = fr.gl_account
                                                                                                                                                                    where fr.date <  $P{start_date} and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
-                                                                                                                                                                     and (ft.sector_id = $P{sector_id} or $P{sector_id} is null)
+                                                                                                                                                                     and (ft.sector_id = $P{sector_id} or $P{sector_id} = 10)
                                                                                                                                                                      and (gl.gl_account_type = 'REVENUE' or gl.gl_account_type = 'EXPENDITURE' or gl.gl_account_type = 'OPENING_BALANCE')
                                                                                                                                                                    group by fr.funding_source_id, fr.facility_id
 
@@ -69,7 +72,7 @@
                                                                                                                                                                        join facility_types ft on ft.id = wv.facility_type_id
                                                                                                                                                                    where fr.date between $P{start_date}  and $P{end_date}
                                                                                                                                                                      and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
-                                                                                                                                                                     and (ft.sector_id = $P{sector_id} or $P{sector_id} is null)
+                                                                                                                                                                     and (ft.sector_id = $P{sector_id} or $P{sector_id} = 10)
                                                                                                                                                                      and gl.gl_account_type = 'REVENUE'
                                                                                                                                                                    group by fr.funding_source_id,
                                                                                                                                                                        fr.facility_id
@@ -83,20 +86,18 @@
                                                                                                                                                                        join facility_types ft on ft.id = wv.facility_type_id
                                                                                                                                                                    where fr.date between  $P{start_date}  and  $P{end_date}
                                                                                                                                                                      and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
-                                                                                                                                                                  and (ft.sector_id = $P{sector_id} or $P{sector_id} is null)
+                                                                                                                                                                  and (ft.sector_id = $P{sector_id} or $P{sector_id} = 10)
                                                                                                                                                                    and gl.gl_account_type = 'EXPENDITURE'
                                                                                                                                                                    group by fr.funding_source_id, fr.facility_id
                                                                                                                                                                   )sub
                                                                                                                                                                   on wv.id = sub.facility_id  and (wv.cid = $P{location_id} or wv.rid =  $P{location_id}  or  1 =  $P{location_id} )
                                                                                                                                                                       join funding_sources fs on fs.id = sub.funding_source_id
-group by wv.rname, wv.cname,wv.ftype, wv.name, fs.code, fs.description,wv.code
-
-]]>
+group by wv.rname, wv.cname,wv.ftype, wv.name, fs.code, fs.description,wv.code]]>
 		</queryString>
 		<field name="type" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="type"/>
 			<property name="com.jaspersoft.studio.field.label" value="type"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="facility_types"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facility_ward_view"/>
 		</field>
 		<field name="fcode" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="fcode"/>
@@ -118,7 +119,7 @@ group by wv.rname, wv.cname,wv.ftype, wv.name, fs.code, fs.description,wv.code
 			<property name="com.jaspersoft.studio.field.label" value="description"/>
 			<property name="com.jaspersoft.studio.field.tree.path" value="funding_sources"/>
 		</field>
-		<field name="budget" class="java.math.BigDecimal">
+		<field name="budget" class="java.lang.Integer">
 			<property name="com.jaspersoft.studio.field.name" value="budget"/>
 			<property name="com.jaspersoft.studio.field.label" value="budget"/>
 		</field>
@@ -133,6 +134,10 @@ group by wv.rname, wv.cname,wv.ftype, wv.name, fs.code, fs.description,wv.code
 		<field name="expenditure" class="java.math.BigDecimal">
 			<property name="com.jaspersoft.studio.field.name" value="expenditure"/>
 			<property name="com.jaspersoft.studio.field.label" value="expenditure"/>
+		</field>
+		<field name="totalfund" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="totalfund"/>
+			<property name="com.jaspersoft.studio.field.label" value="totalfund"/>
 		</field>
 		<field name="fund_balance" class="java.math.BigDecimal">
 			<property name="com.jaspersoft.studio.field.name" value="fund_balance"/>
@@ -159,6 +164,10 @@ group by wv.rname, wv.cname,wv.ftype, wv.name, fs.code, fs.description,wv.code
 	<parameter name="end_date" class="java.sql.Date"/>
 	<parameter name="start_date" class="java.sql.Date"/>
 	<parameter name="financial_year_id" class="java.lang.Integer"/>
+	<parameter name="sector_id" class="java.lang.Integer">
+		<parameterDescription><![CDATA[Sector_id]]></parameterDescription>
+		<defaultValueExpression><![CDATA[10]]></defaultValueExpression>
+	</parameter>
 	<queryString language="SQL">
 		<![CDATA[select
 name as council
@@ -208,7 +217,7 @@ from admin_areas
 				<textElement textAlignment="Left" verticalAlignment="Middle">
 					<font fontName="SansSerif" size="9" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA[ " From " +  DATEFORMAT( $P{start_date},"MMM dd, yyyy")  +  "  To  " + DATEFORMAT( $P{end_date},"MMM dd, yyyy")]]></textFieldExpression>
+				<textFieldExpression><![CDATA[" From " +  DATEFORMAT( $P{start_date},"MMM dd, yyyy")  +  "  To  " + DATEFORMAT( $P{end_date},"MMM dd, yyyy")]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight">
 				<reportElement x="150" y="103" width="254" height="19" uuid="7517af8e-8409-441b-aecc-9221d89e34bb">
