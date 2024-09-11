@@ -52,10 +52,11 @@
     from (
 select
     fr.funding_source_id,
-    sum(case when fr.transaction_type != 'App\Models\Payable' then fr.amount else 0 end) as receipt,
-    sum(case when fr.transaction_type = 'App\Models\Payable' then -1 * fr.amount else 0 end) as expediture
+    sum(case when ga.gl_account_type = 'REVENUE' or ga.gl_account_type = 'DEPOSIT' then fr.amount else 0 end) as receipt,
+    sum(case when ga.gl_account_type = 'EXPENDITURE' then -1 * fr.amount else 0 end) as expediture
 from fund_trackings fr
-where  facility_id = $P{facility_id} and date >= $P{start_date}:: date and date <= $P{end_date}
+join gl_accounts ga on fr.gl_account = ga.code
+where  fr.facility_id = $P{facility_id} and date >= $P{start_date}:: date and date <= $P{end_date}
 group by fr.funding_source_id) cr
 full outer join (
     select
