@@ -62,29 +62,39 @@
 
 from (
          SELECT
-             tv.gfs_code,
-             tv.gfsname as gfs_description,
-             case when tv.account_nature = 'DEBIT' then sum(tv.dr_amount - tv.cr_amount) else 0.00 end as dr_amount,
-             case when tv.account_nature = 'CREDIT' then sum(tv.cr_amount - tv.dr_amount) else 0.00 end as cr_amount
-         from transactions_view tv
+             ga.gfs_code,
+             gfs.name as gfs_description,
+             case when gfscat.account_nature = 'DEBIT' then sum(ge.dr_amount - ge.cr_amount) else 0.00 end as dr_amount,
+             case when gfscat.account_nature = 'CREDIT' then sum(ge.cr_amount - ge.dr_amount) else 0.00 end as cr_amount
+         from gl_entries ge
+                  join gl_entry_groups geg on ge.gl_entry_group_id = geg.id
+                  join gl_accounts ga on ge.account = ga.code
+                  join gfs_codes gfs on gfs.code = ga.gfs_code
+                  join gfs_categories gfscat on gfscat.id = gfs.category_id
+                  join facility_ward_view fwv on fwv.id = geg.facility_id
 
-         where tv.cid =  $P{location_id}
-           and tv.apply_date <=  $P{end_date}
-           and (tv.account_type = 'PHYSICAL/REAL' OR tv.apply_date >= (select start_date from financial_years where '2022-12-30' between start_date and end_date) )
-         group by tv.gfs_code, tv.gfsname, tv.account_nature
+         where fwv.cid = $P{location_id}
+           and geg.apply_date <= $P{end_date}
+           and (gfscat.account_type = 'PHYSICAL/REAL' OR geg.apply_date >= (select start_date from financial_years where $P{end_date} between start_date and end_date) )
+         group by ga.gfs_code, gfs.name, gfscat.account_nature
          UNION
 
          SELECT
              '63293101' as  gfs_code,
              'Accumulated Surplus/Deficit' as gfs_description,
              0.00 as dr_amount,
-             sum(tv.cr_amount - tv.dr_amount) as cr_amount
-         from transactions_view tv
-         where tv.cid =  $P{location_id}
-           and (tv.account_type = 'NOMINAL'
-           AND tv.apply_date < (select start_date from financial_years where  $P{end_date} between start_date and end_date) )
+             sum(ge.cr_amount - ge.dr_amount) as cr_amount
+         from gl_entries ge
+             join gl_entry_groups geg on ge.gl_entry_group_id = geg.id
+             join gl_accounts ga on ge.account = ga.code
+             join gfs_codes gfs on gfs.code = ga.gfs_code
+             join gfs_categories gfscat on gfscat.id = gfs.category_id
+             join facility_ward_view fwv on fwv.id = geg.facility_id
+         where fwv.cid = $P{location_id}
+           and (gfscat.account_type = 'NOMINAL'
+           AND geg.apply_date < (select start_date from financial_years where $P{end_date} between start_date and end_date) )
      )sub
-group by gfs_code, gfs_description]]>
+group by gfs_code, gfs_description;]]>
 		</queryString>
 		<field name="sn" class="java.lang.Long">
 			<property name="com.jaspersoft.studio.field.name" value="sn"/>

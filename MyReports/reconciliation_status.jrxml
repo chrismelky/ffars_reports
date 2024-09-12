@@ -49,15 +49,17 @@
     ba.name as account,
     sum(case when r.confirmed = true then 1 else 0 end) as confirmed,
     sum(case when r.confirmed <> true then 1 else 0 end) as not_confirmed,
-    EXTRACT(month FROM age(( $P{end_date}::date + INTERVAL '6 days'),(select  start_date from financial_years fy where fy.start_date <= $P{end_date}::date and fy.end_date >=  $P{end_date}::date))) as reuired
+    EXTRACT(month FROM age(( $P{end_date}::date + INTERVAL '0 days'),(select  start_date from financial_years fy where fy.start_date <= $P{end_date}::date  and fy.end_date >=  $P{end_date}::date - INTERVAL '0 days'))) + 1 as reuired
 from facility_ward_view  vw
          join bank_accounts ba on ba.facility_id = vw.id
          left join reconciliations as r on ba.id = r.bank_account_id and  vw.id = r.facility_id
-    and r.financial_year_id = (select id from financial_years where start_date <= $P{end_date}::date and end_date >=  $P{end_date}::date)
+    and r.financial_year_id = (select id from financial_years where start_date <= $P{end_date}::date  and end_date >=  $P{end_date}::date )
     and r.month <=(DATE_TRUNC('MONTH', ( $P{end_date}::date)::DATE) + INTERVAL '1 MONTH - 1 day')::DATE
 where (vw.rid = $P{location_id} or vw.cid = $P{location_id} or wid = $P{location_id} or 1= $P{location_id})
 group by vw.rname, vw.cname, vw.ftype, vw.name, ba.id
-order by region,council, type, facility]]>
+order by region,council, type, facility
+
+]]>
 		</queryString>
 		<field name="region" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="region"/>
